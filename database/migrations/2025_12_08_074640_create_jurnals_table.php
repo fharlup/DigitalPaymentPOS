@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('jurnals', function (Blueprint $table) {
             $table->id();
             $table->date('tanggal');
-    $table->string('keterangan'); // Deskripsi transaksi
-    $table->foreignId('transaksi_id')->nullable()->constrained('transaksis'); // Relasi ke POS
+    $table->string('keterangan'); 
+    $table->foreignId('transaksi_id')->nullable()->constrained('transaksis'); 
             $table->timestamps();
         });
     }

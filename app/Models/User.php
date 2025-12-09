@@ -13,15 +13,11 @@ use Filament\Panel;
 class User extends Authenticatable implements FilamentUser
 {
     use HasFactory, Notifiable;
-
-    /**
-     * PENTING: 'role' harus ada di sini agar bisa diisi data.
-     */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role', // <--- Pastikan ini ada!
+        'role', 
     ];
 
     protected $hidden = [
@@ -34,12 +30,8 @@ class User extends Authenticatable implements FilamentUser
         'password' => 'hashed',
     ];
 
-    /**
-     * Logika Pintu Masuk Dashboard Admin (Filament)
-     */
     public function canAccessPanel(Panel $panel): bool
     {
-        // Hanya user dengan role 'admin' yang boleh masuk
         return $this->role === 'admin';
     }
 }

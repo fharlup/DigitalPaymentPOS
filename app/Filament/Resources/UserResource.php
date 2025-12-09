@@ -70,10 +70,10 @@ class UserResource extends Resource
                 ->label('Email'),
             
             TextColumn::make('role')
-                ->badge() // Biar tampilannya keren kayak lencana
+                ->badge() 
                 ->color(fn (string $state): string => match ($state) {
-                    'admin' => 'success', // Hijau
-                    'kasir' => 'warning', // Kuning
+                    'admin' => 'success', 
+                    'kasir' => 'warning', 
                 })
                 ->sortable()
                 ->label('Jabatan'),

@@ -54,8 +54,8 @@ class JurnalResource extends Resource
                                 ->default(0)
                                 ->prefix('Rp'),
                         ])
-                        ->columns(4) // Repeater dibagi 4 kolom
-                        ->defaultItems(2) // Default muncul 2 baris (Debit & Kredit)
+                        ->columns(4) 
+                        ->defaultItems(2) 
                         ->addActionLabel('Tambah Baris Akun'),
                 ]),
             ]);

@@ -28,7 +28,6 @@ class ProdukResource extends Resource
             ->schema([
                Section::make('Detail Produk')
                 ->schema([
-                    // Pilihan Kategori (Ambil dari tabel kategoris)
                     Select::make('kategori_id')
                         ->relationship('kategori', 'nama_kategori')
                         ->required()
@@ -51,7 +50,7 @@ class ProdukResource extends Resource
                         ->numeric()
                         ->default(0)
                         ->label('Stok Awal'),
-                ])->columns(2) // Tampilan 2 kolom biar rapi
+                ])->columns(2) 
             ]);
     }
 
@@ -71,14 +70,14 @@ class ProdukResource extends Resource
                 ->label('Kategori'),
 
             Tables\Columns\TextColumn::make('harga')
-                ->money('IDR') // Otomatis format Rupiah
+                ->money('IDR') 
                 ->sortable(),
 
             Tables\Columns\TextColumn::make('stok')
                 ->numeric()
                 ->sortable()
-                ->color(fn (string $state): string => $state <= 5 ? 'danger' : 'success') // Merah jika stok < 5
-                ->label('Sisa Stok'),
+                ->color(fn (string $state): string => $state <= 5 ? 'danger' : 'success') 
+              ->label('Sisa Stok'),
         ])
         ->filters([
             // Filter berdasarkan kategori
