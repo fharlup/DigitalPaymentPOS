@@ -10,7 +10,7 @@ class Jurnal extends Model
 
     protected $fillable = ['tanggal', 'keterangan', 'transaksi_id'];
 
-    // Relasi: Satu jurnal punya banyak baris detail
+    
     public function detailJurnals()
     {
         return $this->hasMany(DetailJurnal::class);
