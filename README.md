@@ -1,59 +1,124 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+📘 README – Project POS "Soto Mbak Eni" (Laravel + Filament + Livewire)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Panduan lengkap untuk menjalankan project Tugas Akhir Aplikasi POS Soto Mbak Eni yang dibangun menggunakan Laravel 10, Filament V3, dan Livewire.
 
-## About Laravel
+🚀 1. Persiapan Software (Wajib Install)
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+Pastikan perangkatmu sudah terpasang software berikut:
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+XAMPP (PHP 8.1 atau lebih baru)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+Composer – https://getcomposer.org/
 
-## Learning Laravel
+Visual Studio Code
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+Git 
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
 
-## Laravel Sponsors
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+🛠️ 2. Langkah Setup Project
 
-### Premium Partners
+A. Jika file diberikan dalam bentuk ZIP/Flashdisk
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Extract project ke lokasi pilihan, contoh:
 
-## Contributing
+C:\ngoding\soto-mbak-eni
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Buka folder project di VS Code.
 
-## Code of Conduct
+Buka Terminal di VS Code dengan menekan Ctrl + J.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+B. Install Library Project
 
-## Security Vulnerabilities
+Jalankan perintah berikut untuk mendownload folder vendor:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+composer install
 
-## License
+C. Setting Environment (.env)
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Buat file .env dari contoh:
+
+copy .env.example .env
+
+(Mac/Linux gunakan cp .env.example .env)
+
+Generate application key:
+
+php artisan key:generate
+
+D. Setup Database
+
+
+Jalankan Apache dan MySQL di XAMPP.
+
+Buka browser: http://localhost/phpmyadmin
+
+Buat database baru bernama:
+
+db_soto_mbak_eni
+
+Buka file .env dan pastikan setting berikut:
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=db_soto_mbak_eni
+DB_USERNAME=root
+DB_PASSWORD=
+
+E. Migrasi Database
+
+Jalankan perintah berikut untuk membuat seluruh tabel yang dibutuhkan:
+
+php artisan migrate
+
+👤 3. Membuat Akun Admin & Data Awal
+
+A. Buat User Super Admin Filament
+
+php artisan make:filament-user
+
+Isi seperti berikut:
+
+Name: Admin
+
+Email: admin@soto.com
+
+Password: bebas
+
+B. (Opsional) Isi Data Dummy
+
+Jika ingin data COA awal seperti Akun Kas dan Penjualan, bisa input manual via Admin Panel atau import SQL jika tersedia.
+
+▶️ 4. Menjalankan Aplikasi
+
+Jalankan server Laravel dengan:
+
+php artisan serve
+
+Akses Halaman Aplikasi
+
+Admin Panel (Penjualan & Akuntansi)
+👉 http://127.0.0.1:8000/admin
+
+Halaman Pelanggan (Pesan Makanan)
+👉 http://127.0.0.1:8000/pesan
+
+Halaman Kasir (Pembayaran)
+👉 http://127.0.0.1:8000/kasir
+
+Login menggunakan akun admin yang dibuat pada langkah sebelumnya.
+
+✅ Selesai!
+
+Project sekarang sudah siap digunakan. Jika ada error, pastikan:
+
+XAMPP sudah menyala
+
+.env sudah benar
+
+Composer sudah terinstall
+
+Migrasi sudah dijalankan
+
+
