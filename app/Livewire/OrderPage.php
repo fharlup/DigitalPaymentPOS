@@ -20,13 +20,16 @@ class OrderPage extends Component
     public $nama_pelanggan;
 
     // Konfigurasi Midtrans saat komponen dimuat
-    public function boot()
-    {
-        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
-    }
+    // public function boot()
+    // {
+    //     Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+    //     Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+    //     Config::$isSanitized = true;
+    //     Config::$is3ds = true;
+    //     Config::$curlOptions = [
+    //     CURLOPT_SSL_VERIFYPEER => false,
+    // ];
+    // }
 
     public function addToCart($produkId)
     {
@@ -51,11 +54,12 @@ class OrderPage extends Component
     }
 
     // UPDATE: Fungsi Checkout menerima parameter metode bayar
-    public function checkout($metode = 'tunai')
+    
+public function checkout($metode = 'tunai')
     {
         if (empty($this->cart)) return;
 
-        // Validasi nama pelanggan (wajib kalau bayar sendiri)
+        // Validasi nama pelanggan
         if (empty($this->nama_pelanggan)) {
             session()->flash('error', 'Mohon isi nama Anda dulu.');
             return;
@@ -63,14 +67,18 @@ class OrderPage extends Component
 
         $transaksi = null;
 
-        DB::transaction(function () use (&$transaksi) {
-            // 1. Simpan Transaksi (Status Pending)
+        // PERBAIKAN ADA DI BARIS BAWAH INI:
+        // Tambahkan koma dan $metode di dalam kurung use (...)
+        DB::transaction(function () use (&$transaksi, $metode) { 
+            
+            // 1. Simpan Transaksi
             $transaksi = Transaksi::create([
-                'user_id' => 1, // User Default
+                'user_id' => 1, 
                 'nama_pelanggan' => $this->nama_pelanggan,
                 'tanggal_transaksi' => now(),
                 'total_harga' => $this->getTotalProperty(),
                 'status' => 'pending',
+                // Sekarang $metode sudah bisa dibaca di sini
                 'metode_pembayaran' => $metode === 'qris' ? 'qris' : 'tunai'
             ]);
 
@@ -88,16 +96,16 @@ class OrderPage extends Component
         // == LOGIKA PERCABANGAN PEMBAYARAN ==
         
         if ($metode === 'qris') {
-            // A. Jika QRIS: Minta Token ke Midtrans & Buka Popup
             $this->processMidtrans($transaksi);
         } else {
-            // B. Jika Tunai: Selesai, suruh ke kasir
+            // Jika TUNAI: Simpan ID untuk ditampilkan ke user
+            $this->successOrderId = $transaksi->id;
+            
+            // Bersihkan keranjang
             $this->cart = [];
             $this->nama_pelanggan = '';
-            session()->flash('message', 'Pesanan masuk! Silakan bayar tunai di kasir.');
         }
     }
-
     public function processMidtrans($transaksi)
     {
         $params = [

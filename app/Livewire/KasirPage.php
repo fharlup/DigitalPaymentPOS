@@ -14,13 +14,16 @@ use Midtrans\Snap;
 class KasirPage extends Component
 {
     // Konfigurasi Midtrans saat komponen dimuat
-    public function boot()
-    {
-        Config::$serverKey = env('MIDTRANS_SERVER_KEY');
-        Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
-        Config::$isSanitized = true;
-        Config::$is3ds = true;
-    }
+    // public function boot()
+    // {
+    //     Config::$serverKey = env('MIDTRANS_SERVER_KEY');
+    //     Config::$isProduction = env('MIDTRANS_IS_PRODUCTION', false);
+    //     Config::$isSanitized = true;
+    //     Config::$is3ds = true;
+    //     Config::$curlOptions = [
+    //     CURLOPT_SSL_VERIFYPEER => false,
+    // ];
+    // }
 
     // Mengambil data pesanan status 'pending' secara realtime
     public function getPendingTransaksisProperty()
