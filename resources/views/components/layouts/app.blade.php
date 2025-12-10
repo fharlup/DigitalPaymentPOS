@@ -23,16 +23,6 @@
             {{ $slot }}
         </div>
 
-        <div class="fixed bottom-0 w-full max-w-[480px] bg-white border-t border-gray-200 p-2 flex justify-around items-center z-50">
-            <a href="/pesan" class="flex flex-col items-center text-gray-600 hover:text-orange-600">
-                <span class="text-2xl">🍜</span>
-                <span class="text-xs">Menu</span>
-            </a>
-            <a href="/kasir" class="flex flex-col items-center text-gray-600 hover:text-orange-600">
-                <span class="text-2xl">💰</span>
-                <span class="text-xs">Kasir</span>
-            </a>
-        </div>
     </div>
 
 </body>

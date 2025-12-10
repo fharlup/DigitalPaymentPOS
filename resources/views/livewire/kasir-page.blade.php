@@ -22,15 +22,25 @@
     </script>
 
     {{-- Header --}}
+   {{-- Header --}}
     <div class="flex justify-between items-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800">Kasir / POS</h2>
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Kasir</h2>
+            <p class="text-xs text-gray-500">Halo, {{ auth()->user()->name }} 👋</p>
+        </div>
         
-        <div class="flex items-center gap-2 text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-            <span class="relative flex h-3 w-3">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-            </span>
-            Live Update
+        <div class="flex gap-2">
+            <div class="flex items-center gap-1 text-[10px] text-gray-500 bg-gray-100 px-2 py-1 rounded-full border">
+                <span class="relative flex h-2 w-2">
+                  <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                Live
+            </div>
+
+            <a href="/logout" class="bg-red-50 text-red-500 px-3 py-1 rounded-lg text-xs font-bold border border-red-100 hover:bg-red-100">
+                Keluar
+            </a>
         </div>
     </div>
 
