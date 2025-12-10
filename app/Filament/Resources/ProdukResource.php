@@ -3,18 +3,19 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\ProdukResource\Pages;
-use App\Filament\Resources\ProdukResource\RelationManagers;
 use App\Models\Produk;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Section;
+// PERBAIKAN DI SINI (Gunakan Namespace yang benar):
+use Filament\Forms\Components\FileUpload; 
+use Filament\Tables\Columns\ImageColumn;
+use Filament\Tables\Columns\TextColumn;
 
 class ProdukResource extends Resource
 {
@@ -26,31 +27,35 @@ class ProdukResource extends Resource
     {
         return $form
             ->schema([
-               Section::make('Detail Produk')
-                ->schema([
-                    Select::make('kategori_id')
-                        ->relationship('kategori', 'nama_kategori')
-                        ->required()
-                        ->label('Kategori Menu'),
+                Section::make('Detail Produk')
+                    ->schema([
+                        Select::make('kategori_id')
+                            ->relationship('kategori', 'nama_kategori')
+                            ->required()
+                            ->label('Kategori Menu'),
 
-                    TextInput::make('nama_produk')
-                        ->required()
-                        ->maxLength(100)
-                        ->label('Nama Menu'),
+                        TextInput::make('nama_produk')
+                            ->required()
+                            ->maxLength(100)
+                            ->label('Nama Menu'),
 
-                    // Input format uang
-                    TextInput::make('harga')
-                        ->required()
-                        ->numeric()
-                        ->prefix('Rp')
-                        ->label('Harga Satuan'),
+                        FileUpload::make('gambar')
+                            ->image() 
+                            ->directory('products') 
+                            ->columnSpanFull(),
 
-                    TextInput::make('stok')
-                        ->required()
-                        ->numeric()
-                        ->default(0)
-                        ->label('Stok Awal'),
-                ])->columns(2) 
+                        TextInput::make('harga')
+                            ->required()
+                            ->numeric()
+                            ->prefix('Rp')
+                            ->label('Harga Satuan'),
+
+                        TextInput::make('stok')
+                            ->required()
+                            ->numeric()
+                            ->default(0)
+                            ->label('Stok Awal'),
+                    ])->columns(2)
             ]);
     }
 
@@ -58,41 +63,36 @@ class ProdukResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nama_produk')
-                ->searchable()
-                ->sortable()
-                ->weight('bold')
-                ->label('Menu'),
+                ImageColumn::make('gambar')->square(),
+                
+                TextColumn::make('nama_produk')
+                    ->searchable()
+                    ->sortable()
+                    ->weight('bold')
+                    ->label('Menu'),
 
-            Tables\Columns\TextColumn::make('kategori.nama_kategori')
-                ->sortable()
-                ->badge()
-                ->label('Kategori'),
+                TextColumn::make('kategori.nama_kategori')
+                    ->sortable()
+                    ->badge()
+                    ->label('Kategori'),
 
-            Tables\Columns\TextColumn::make('harga')
-                ->money('IDR') 
-                ->sortable(),
+                TextColumn::make('harga')
+                    ->money('IDR')
+                    ->sortable(),
 
-            Tables\Columns\TextColumn::make('stok')
-                ->numeric()
-                ->sortable()
-                ->color(fn (string $state): string => $state <= 5 ? 'danger' : 'success') 
-              ->label('Sisa Stok'),
-        ])
-        ->filters([
-            // Filter berdasarkan kategori
-            Tables\Filters\SelectFilter::make('kategori')
-                ->relationship('kategori', 'nama_kategori'),
-        ])
-        ->actions([
-            Tables\Actions\EditAction::make(),
-            Tables\Actions\DeleteAction::make(),
+                TextColumn::make('stok')
+                    ->numeric()
+                    ->sortable()
+                    ->color(fn (string $state): string => $state <= 5 ? 'danger' : 'success')
+                    ->label('Sisa Stok'),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('kategori')
+                    ->relationship('kategori', 'nama_kategori'),
             ])
             ->actions([
                 Tables\Actions\EditAction::make(),
+                Tables\Actions\DeleteAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
