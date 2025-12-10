@@ -12,16 +12,17 @@ use App\Models\DetailJurnal;
 use App\Models\Akun;
 use Illuminate\Support\Facades\DB;
 use Midtrans\Config;
-use Midtrans\Snap;
+use Illuminate\Support\Facades\Log;
+use Midtrans\Snap; // Kita pakai Snap lagi
 
 class OrderPage extends Component
 {
     public $cart = [];
     public $nama_pelanggan;
-    public $successOrderId = null; // Menyimpan ID order jika bayar tunai
-    public $showCartModal = false; // Kontrol popup keranjang
+    public $successOrderId = null; 
+    public $showCartModal = false; 
 
-    // Setup Konfigurasi Midtrans & SSL
+    // Setup Konfigurasi Midtrans
     public function boot()
     {
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
@@ -35,19 +36,25 @@ class OrderPage extends Component
         ];
     }
 
-    // Menambah item ke keranjang
+    // Listener Error Midtrans
+    protected $listeners = ['midtrans-error' => 'handleMidtransError'];
+
+    public function handleMidtransError($data)
+    {
+        session()->flash('error', $data['message'] ?? 'Pembayaran Gagal');
+    }
+
+    // Tambah Item ke Keranjang
     public function addToCart($produkId)
     {
         $produk = Produk::find($produkId);
         
-        // Validasi Stok
         if ($produk->stok <= 0) {
             session()->flash('error', 'Maaf, stok habis!');
             return;
         }
 
         if (isset($this->cart[$produkId])) {
-            // Cek jika ditambah melebihi stok
             if ($this->cart[$produkId]['jumlah'] + 1 > $produk->stok) {
                 session()->flash('error', 'Stok tidak cukup!');
                 return;
@@ -62,12 +69,12 @@ class OrderPage extends Component
                 'jumlah' => 1,
                 'subtotal' => $produk->harga,
                 'gambar' => $produk->gambar,
-                'max_stok' => $produk->stok // Simpan info stok max
+                'max_stok' => $produk->stok
             ];
         }
     }
 
-    // Update Qty di Modal Keranjang
+    // Update Qty
     public function updateQty($produkId, $change)
     {
         if (!isset($this->cart[$produkId])) return;
@@ -75,14 +82,12 @@ class OrderPage extends Component
         $newQty = $this->cart[$produkId]['jumlah'] + $change;
         $maxStok = $this->cart[$produkId]['max_stok'];
 
-        // Hapus jika 0
         if ($newQty <= 0) {
             unset($this->cart[$produkId]);
             if (empty($this->cart)) $this->showCartModal = false;
             return;
         }
 
-        // Cek Stok Maksimal
         if ($change > 0 && $newQty > $maxStok) {
              session()->flash('error', 'Stok maksimal tercapai!');
              return;
@@ -92,26 +97,26 @@ class OrderPage extends Component
         $this->cart[$produkId]['subtotal'] = $newQty * $this->cart[$produkId]['harga'];
     }
 
-    // Hitung Total Belanja
     public function getTotalProperty()
     {
         return array_sum(array_column($this->cart, 'subtotal'));
     }
 
-    // Proses Checkout Utama
+    // Proses Checkout
     public function checkout($metode = 'tunai')
     {
         if (empty($this->cart)) return;
 
-        if (empty($this->nama_pelanggan)) {
-            session()->flash('error', 'Mohon isi nama Anda dulu.');
-            return;
-        }
+        $this->validate([
+            'nama_pelanggan' => 'required|min:2'
+        ], [
+            'nama_pelanggan.required' => 'Nama harus diisi dulu ya!',
+            'nama_pelanggan.min' => 'Nama terlalu pendek'
+        ]);
 
         DB::transaction(function () use ($metode) {
-            // 1. Buat Transaksi (Status Awal: Pending)
             $transaksi = Transaksi::create([
-                'user_id' => 1, // Default user
+                'user_id' => 1, 
                 'nama_pelanggan' => $this->nama_pelanggan,
                 'tanggal_transaksi' => now(),
                 'total_harga' => $this->getTotalProperty(),
@@ -119,7 +124,6 @@ class OrderPage extends Component
                 'metode_pembayaran' => $metode === 'qris' ? 'qris' : 'tunai'
             ]);
 
-            // 2. Simpan Detail Item & KURANGI STOK
             foreach ($this->cart as $item) {
                 DetailTransaksi::create([
                     'transaksi_id' => $transaksi->id,
@@ -128,16 +132,15 @@ class OrderPage extends Component
                     'subtotal' => $item['subtotal'],
                 ]);
 
-                // Update Stok di Database
                 $produk = Produk::find($item['id']);
                 $produk->decrement('stok', $item['jumlah']);
             }
 
-            // 3. Logika Percabangan Pembayaran
             if ($metode === 'qris') {
+                // Panggil Snap
                 $this->processMidtrans($transaksi);
             } else {
-                // Tunai: Selesai, tampilkan nomor order
+                // Tunai
                 $this->successOrderId = $transaksi->id;
                 $this->cart = [];
                 $this->nama_pelanggan = '';
@@ -146,8 +149,8 @@ class OrderPage extends Component
         });
     }
 
-    // Request Token Midtrans (Khusus QRIS)
-    public function processMidtrans($transaksi)
+    // --- KEMBALI KE SNAP ---
+   public function processMidtrans($transaksi)
     {
         $params = [
             'transaction_details' => [
@@ -157,22 +160,28 @@ class OrderPage extends Component
             'customer_details' => [
                 'first_name' => $transaksi->nama_pelanggan,
             ],
-            // Hapus enabled_payments agar muncul semua opsi di Simulator
         ];
 
         try {
+            // Minta Token Snap
             $snapToken = Snap::getSnapToken($params);
+            
             $transaksi->update(['snap_token' => $snapToken]);
 
-            // Kirim token ke frontend
+            // Kirim Token ke Frontend
             $this->dispatch('trigger-payment', token: $snapToken, trx_id: $transaksi->id);
 
         } catch (\Exception $e) {
-            session()->flash('error', 'Midtrans Error: ' . $e->getMessage());
+            // 2. LOGIC TRACKING ERROR (Masuk ke storage/logs/laravel.log)
+            Log::error('GAGAL MIDTRANS untuk Transaksi ID: ' . $transaksi->id);
+            Log::error('Pesan Error: ' . $e->getMessage());
+            Log::error('File: ' . $e->getFile() . ' baris ' . $e->getLine());
+            
+            // Tampilkan pesan ringkas ke user
+            session()->flash('error', 'Gagal koneksi: ' . $e->getMessage());
         }
     }
-
-    // Callback Sukses (Hanya dipanggil jika QRIS Berhasil dibayar di halaman ini)
+    // Callback Sukses
     public function paymentSuccess($transaksiId)
     {
         $transaksi = Transaksi::find($transaksiId);
@@ -181,14 +190,13 @@ class OrderPage extends Component
         DB::transaction(function () use ($transaksi) {
             $transaksi->update(['status' => 'paid']);
 
-            // === JURNAL OTOMATIS (QRIS) ===
+            // Jurnal Otomatis
             $jurnal = Jurnal::create([
                 'tanggal' => now(),
-                'keterangan' => 'Penjualan QRIS #' . $transaksi->id,
+                'keterangan' => 'Penjualan Snap QRIS #' . $transaksi->id,
                 'transaksi_id' => $transaksi->id,
             ]);
 
-            // Debit: Bank (112), Kredit: Penjualan (411)
             $akunBank = Akun::where('kode_akun', '112')->first() ?? Akun::find(1);
             $akunJual = Akun::where('kode_akun', '411')->first() ?? Akun::find(2);
 
@@ -199,7 +207,7 @@ class OrderPage extends Component
         $this->cart = [];
         $this->nama_pelanggan = '';
         $this->showCartModal = false;
-        session()->flash('message', 'Pembayaran QRIS Berhasil! Silakan ambil pesanan.');
+        session()->flash('message', 'Pembayaran Berhasil!');
     }
 
     public function render()
