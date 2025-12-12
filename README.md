@@ -122,3 +122,16 @@ Composer sudah terinstall
 Migrasi sudah dijalankan
 
 
+cara jalananti test nya
+
+-cek php nya dimana dulu
+php --ini
+
+nanti ada path nya misal
+//C:\Users\fajar\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.4_Microsoft.Winget.Source_8wekyb3d8bbwe\php.ini
+
+lalu nanti code [path nya]
+;extension=pdo_sqlite
+
+jadi
+extension=pdo_sqlite
