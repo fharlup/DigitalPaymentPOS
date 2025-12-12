@@ -15,4 +15,17 @@ class DetailTransaksi extends Model
         'jumlah',
         'subtotal',
     ];
+
+    // --- TAMBAHKAN BAGIAN INI ---
+    public function transaksi()
+    {
+        return $this->belongsTo(Transaksi::class);
+    }
+    // ----------------------------
+
+    // Relasi ke Produk (Opsional, buat jaga-jaga kalau butuh nanti)
+    public function produk()
+    {
+        return $this->belongsTo(Produk::class);
+    }
 }
