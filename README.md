@@ -121,6 +121,9 @@ Composer sudah terinstall
 
 Migrasi sudah dijalankan
 
+biar image nya ke load
+
+php artisan storage:link
 
 cara jalananti test nya
 
