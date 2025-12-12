@@ -21,7 +21,22 @@ class OrderPage extends Component
     public $nama_pelanggan;
     public $successOrderId = null; 
     public $showCartModal = false; 
+    public $selectedProduct = null;
+    public $showDetailModal = false;
 
+    // FUNGSI BUKA DETAIL
+    public function openDetail($id)
+    {
+        $this->selectedProduct = Produk::find($id);
+        $this->showDetailModal = true;
+    }
+
+    // FUNGSI TUTUP DETAIL
+    public function closeDetail()
+    {
+        $this->showDetailModal = false;
+        $this->selectedProduct = null;
+    }
     // Setup Konfigurasi Midtrans
     public function boot()
     {
