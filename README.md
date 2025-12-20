@@ -126,6 +126,8 @@ biar image nya ke load
 php artisan storage:link
 
 cara jalananti test nya
+seeding db nya
+
 
 -cek php nya dimana dulu
 php --ini
@@ -139,7 +141,11 @@ lalu nanti code [path nya]
 jadi
 extension=pdo_sqlite
 
+php artisan db:seed
+buat seed
 buat jalaini midtrans nya
+
+
 
 buka vendor midtrans/midtrans-php/midtrasns/api requestor terus genti ke bawah
 
