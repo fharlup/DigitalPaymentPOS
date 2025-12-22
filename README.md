@@ -128,6 +128,8 @@ php artisan storage:link
 cara jalananti test nya
 seeding db nya
 
+php artisan migrate:fresh --seed
+
 
 -cek php nya dimana dulu
 php --ini
