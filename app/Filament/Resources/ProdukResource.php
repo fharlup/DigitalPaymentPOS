@@ -11,6 +11,7 @@ use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Section;
 // PERBAIKAN DI SINI (Gunakan Namespace yang benar):
 use Filament\Forms\Components\FileUpload; 
@@ -55,8 +56,16 @@ class ProdukResource extends Resource
                             ->numeric()
                             ->default(0)
                             ->label('Stok Awal'),
+                        Textarea::make('deskripsi')
+                            ->label('Deskripsi Menu')
+                ->placeholder('Contoh: Kuah santan gurih dengan daging pilihan...')
+                ->rows(3)
+                ->columnSpanFull(),
+
                     ])->columns(2)
+                    
             ]);
+            
     }
 
     public static function table(Table $table): Table

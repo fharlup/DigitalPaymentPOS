@@ -38,39 +38,37 @@ class PelangganTest extends TestCase
             ->assertSet('cart.' . $produk->id . '.jumlah', 1); // Cek jumlah 1
     }
 
-public function test_checkout_tunai_berhasil_membuat_transaksi_pending()
+public function checkout_tunai_berhasil_membuat_transaksi_pending()
     {
-        // 0. BUAT USER ID 1 (WAJIB ADA)
-        // Karena di OrderPage.php kita hardcode 'user_id' => 1
-        \App\Models\User::factory()->create([
-            'id' => 1,
-            'role' => 'admin' // role bebas, yang penting ID-nya 1
-        ]);
-
-        // 1. Siapkan Data Produk
-        $kategori = Kategori::create(['nama_kategori' => 'Minuman']);
-        $produk = Produk::create([
+        // 1. Setup Data
+        $kategori = \App\Models\Kategori::create(['nama_kategori' => 'Makanan']);
+        $produk = \App\Models\Produk::create([
             'kategori_id' => $kategori->id,
             'nama_produk' => 'Es Teh',
             'harga' => 3000,
-            'stok' => 50,
+            'stok' => 10,
+            'gambar' => null
         ]);
+        
+        // Setup Meja (PENTING: Karena sekarang butuh data meja)
+        \App\Models\Meja::create(['nomor_meja' => 'Meja 1']);
 
-        // 2. Simulasi Proses Pesan sampai Checkout
-        Livewire::test(OrderPage::class)
-            ->set('nama_pelanggan', 'Siti')
+        // 2. Action (Livewire)
+        \Livewire\Livewire::test(\App\Livewire\OrderPage::class)
+            ->set('nama_pelanggan', 'Siti') // Set Nama
+            ->set('no_meja', 'Meja 1')      // <--- TAMBAHKAN INI (WAJIB)
             ->call('addToCart', $produk->id)
-            ->call('checkout', 'tunai'); // Klik Bayar Tunai
+            ->call('checkout', 'tunai');    // Klik Bayar
 
-        // 3. Cek Database: Harusnya ada transaksi PENDING (Belum Lunas)
+        // 3. Cek Database
         $this->assertDatabaseHas('transaksis', [
             'nama_pelanggan' => 'Siti',
             'total_harga' => 3000,
-            'status' => 'pending', 
+            'status' => 'pending',
             'metode_pembayaran' => 'tunai',
-            'user_id' => 1 // Memastikan tersimpan dengan ID user yang benar
+            // 'no_meja' => 'Meja 1' // Opsional: Cek mejanya juga masuk
         ]);
-    } 
+    }
     public function test_stok_habis_tidak_bisa_dipesan()
     {
         $kategori = Kategori::create(['nama_kategori' => 'Makanan']);

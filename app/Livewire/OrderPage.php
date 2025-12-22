@@ -10,6 +10,7 @@ use App\Models\DetailTransaksi;
 use App\Models\Jurnal;
 use App\Models\DetailJurnal;
 use App\Models\Akun;
+use App\Models\Meja;
 use Illuminate\Support\Facades\DB;
 use Midtrans\Config;
 use Illuminate\Support\Facades\Log;
@@ -23,6 +24,7 @@ class OrderPage extends Component
     public $showCartModal = false; 
     public $selectedProduct = null;
     public $showDetailModal = false;
+    public $no_meja;
 
     // FUNGSI BUKA DETAIL
     public function openDetail($id)
@@ -122,17 +124,35 @@ class OrderPage extends Component
     {
         if (empty($this->cart)) return;
 
-        $this->validate([
-            'nama_pelanggan' => 'required|min:2'
-        ], [
-            'nama_pelanggan.required' => 'Nama harus diisi dulu ya!',
-            'nama_pelanggan.min' => 'Nama terlalu pendek'
-        ]);
+        // ============================================================
+        // 1. VALIDASI MANUAL: NAMA & MEJA WAJIB ISI
+        // ============================================================
+        if (empty($this->nama_pelanggan) || empty($this->no_meja)) {
+            
+            // A. Tutup modal agar user lihat form input
+            $this->showCartModal = false; 
+
+            // B. Notif Merah
+            session()->flash('error', 'Nama dan Nomor Meja wajib diisi!');
+
+            // C. Validasi Merah di Inputan
+            $this->validate([
+                'nama_pelanggan' => 'required|min:2',
+                'no_meja' => 'required',
+            ], [
+                'nama_pelanggan.required' => 'Siapa nama kamu?',
+                'no_meja.required' => 'Kamu duduk di meja berapa?',
+            ]);
+
+            return; // STOP
+        }
+        // ============================================================
 
         DB::transaction(function () use ($metode) {
             $transaksi = Transaksi::create([
                 'user_id' => 1, 
                 'nama_pelanggan' => $this->nama_pelanggan,
+                'no_meja' => $this->no_meja, // <--- SIMPAN NO MEJA
                 'tanggal_transaksi' => now(),
                 'total_harga' => $this->getTotalProperty(),
                 'status' => 'pending', 
@@ -148,20 +168,25 @@ class OrderPage extends Component
                 ]);
 
                 $produk = Produk::find($item['id']);
-                $produk->decrement('stok', $item['jumlah']);
+                if ($produk) $produk->decrement('stok', $item['jumlah']);
             }
 
             if ($metode === 'qris') {
-                // Panggil Snap
                 $this->processMidtrans($transaksi);
             } else {
-                // Tunai
                 $this->successOrderId = $transaksi->id;
                 $this->cart = [];
-                $this->nama_pelanggan = '';
                 $this->showCartModal = false;
+                session()->flash('message', 'Pesanan Meja ' . $this->no_meja . ' Berhasil Dibuat!');
             }
         });
+        
+        if ($metode !== 'qris') {
+            // Reset form setelah sukses tunai
+            $this->nama_pelanggan = '';
+            $this->no_meja = ''; 
+        }
+    
     }
 
     // --- KEMBALI KE SNAP ---
@@ -229,6 +254,7 @@ class OrderPage extends Component
     {
         return view('livewire.order-page', [
             'kategoris' => Kategori::with('produks')->get(),
+            'mejas' => Meja::all()
         ]);
     }
 }

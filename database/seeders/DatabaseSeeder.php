@@ -8,6 +8,7 @@ use App\Models\Kategori;
 use App\Models\Produk;
 use App\Models\Transaksi;
 use App\Models\DetailTransaksi;
+use App\Models\Meja;
 use App\Models\Akun;
 use Illuminate\Support\Facades\Hash;
 use Carbon\Carbon;
@@ -153,6 +154,31 @@ class DatabaseSeeder extends Seeder
                 // Update Total Harga Header
                 $transaksi->update(['total_harga' => $totalHarga]);
             }
+            
         }
+        // Bersihkan data lama biar gak duplikat kalau di-seed ulang
+        Meja::truncate(); 
+
+        $dataMeja = [];
+
+        // Loop buat Meja 1 sampai 20
+        for ($i = 1; $i <= 20; $i++) {
+            $dataMeja[] = [
+                'nomor_meja' => 'Meja ' . $i,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+        }
+
+        // Tambah opsi khusus Bungkus
+        $dataMeja[] = [
+            'nomor_meja' => 'Bungkus / Take Away',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ];
+
+        // Masukkan semua ke database sekaligus (lebih cepat)
+        Meja::insert($dataMeja);
+    
     }
 }
