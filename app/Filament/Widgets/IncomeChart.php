@@ -3,47 +3,30 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\ChartWidget;
-use App\Models\Transaksi;
-use Flowframe\Trend\Trend;
-use Flowframe\Trend\TrendValue;
 
 class IncomeChart extends ChartWidget
 {
-    protected static ?string $heading = 'Grafik Pemasukan (7 Hari Terakhir)';
-    protected static ?int $sort = 2; // Muncul di bawah kotak statistik
+    protected static ?string $heading = 'Total Pemasukan';
+    protected static ?int $sort = 2; // Urutan ke-2 setelah kotak statistik
 
     protected function getData(): array
     {
-        // Ambil data 7 hari terakhir
-        $data = Trend::model(Transaksi::class)
-            ->between(
-                start: now()->subDays(6),
-                end: now(),
-            )
-            ->perDay()
-            ->sum('total_harga');
-
         return [
             'datasets' => [
                 [
-                    'label' => 'Pemasukan (Rp)',
-                    'data' => $data->map(fn (TrendValue $value) => $value->aggregate),
-                    // Warna-warni tiap batang biar mirip referensi kamu
-                    'backgroundColor' => [
-                        'rgba(255, 99, 132, 0.5)',
-                        'rgba(255, 159, 64, 0.5)',
-                        'rgba(255, 205, 86, 0.5)',
-                        'rgba(75, 192, 192, 0.5)',
-                        'rgba(54, 162, 235, 0.5)',
-                        'rgba(153, 102, 255, 0.5)',
-                        'rgba(201, 203, 207, 0.5)'
-                    ],
-                    'borderColor' => 'transparent',
-                    'barThickness' => 30,
-                    'borderRadius' => 5,
+                    'label' => 'Via POS',
+                    'data' => [14, 17, 6, 16, 12, 17, 21],
+                    'backgroundColor' => '#3b82f6', // Biru
+                    'borderColor' => '#3b82f6',
+                ],
+                [
+                    'label' => 'Via Kasir',
+                    'data' => [12, 11, 23, 7, 11, 13, 11],
+                    'backgroundColor' => '#22c55e', // Hijau
+                    'borderColor' => '#22c55e',
                 ],
             ],
-            'labels' => $data->map(fn (TrendValue $value) => $value->date),
+            'labels' => ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
         ];
     }
 
