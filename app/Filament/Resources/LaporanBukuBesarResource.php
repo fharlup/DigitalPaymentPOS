@@ -17,6 +17,7 @@ class LaporanBukuBesarResource extends Resource
     protected static ?string $navigationLabel = 'Buku Besar';
     protected static ?string $slug = 'laporan-buku-besar';
     protected static ?string $navigationGroup = 'Laporan Keuangan';
+
     protected static ?string $navigationIcon = 'heroicon-o-presentation-chart-line';
     protected static ?int $navigationSort = 3;
 

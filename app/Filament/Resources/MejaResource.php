@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class MejaResource extends Resource
 {
     protected static ?string $model = Meja::class;
-
+    protected static ?string $navigationGroup = 'Pengaturan';
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form

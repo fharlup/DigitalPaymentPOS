@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
+
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -29,12 +30,10 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-                'primary' => Color::Indigo,
-                'danger' => Color::Rose,
-                'warning' => Color::Orange,
-                'success' => Color::Emerald,
-                'info' => Color::Purple,
-            ])
+            // Ganti 'primary' => Color::Purple menjadi:
+            'primary' => Color::Amber, // Atau Color::Orange
+            'gray' => Color::Slate,
+        ]) 
             ->darkMode(false)
             ->sidebarCollapsibleOnDesktop()
             ->brandName('Soto Mbak Eni')

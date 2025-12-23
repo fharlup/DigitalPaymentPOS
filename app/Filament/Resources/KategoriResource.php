@@ -16,7 +16,10 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class KategoriResource extends Resource
 {
     protected static ?string $model = Kategori::class;
-
+    protected static ?string $modelLabel = 'Kategori'; // Nama tunggal
+    protected static ?string $pluralModelLabel = 'Data Kategori'; // Nama jamak (di header tabel)
+    protected static ?string $navigationGroup = 'Dapur & Menu';
+    // Ganti icon agar lebih cantik (opsional)
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form

@@ -19,8 +19,13 @@ use Filament\Forms\Components\Repeater; // Kemungkinan kamu butuh ini juga untuk
 use Filament\Forms\Components\Select;
 class JurnalResource extends Resource
 {
-    protected static ?string $model = Jurnal::class;
 
+    protected static ?string $model = Jurnal::class;
+    protected static ?string $modelLabel = 'Jurnal'; // Nama tunggal
+    protected static ?string $pluralModelLabel = 'Data Jurnal'; // Nama jamak (di header tabel)
+protected static ?string $navigationGroup = 'Laporan Keuangan';
+protected static ?int $navigationSort = 1; // Urutan ke-1 di grup ini
+    // Ganti icon agar lebih cantik (opsional)
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form

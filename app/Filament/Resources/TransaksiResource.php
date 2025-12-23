@@ -16,7 +16,8 @@ class TransaksiResource extends Resource
 
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar'; // Icon Dolar
     protected static ?string $navigationLabel = 'Daftar Pesanan';
-
+    protected static ?string $navigationGroup = 'Laporan Keuangan';
+protected static ?int $navigationSort = 0; // Paling ata
     public static function form(Form $form): Form
     {
         return $form

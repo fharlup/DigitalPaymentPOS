@@ -22,7 +22,7 @@ use Filament\Tables\Columns\TextColumn;
 class ProdukResource extends Resource
 {
     protected static ?string $model = Produk::class;
-
+protected static ?string $navigationGroup = 'Dapur & Menu';
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
     public static function form(Form $form): Form

@@ -16,6 +16,13 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 class AkunResource extends Resource
 {
     protected static ?string $model = Akun::class;
+    protected static ?string $modelLabel = 'Akun'; // Nama tunggal
+    protected static ?string $pluralModelLabel = 'Data Akun'; // Nama jamak (di header tabel)
+    
+    // Ganti icon agar lebih cantik (opsional)
+    protected static ?string $navigationGroup = 'Laporan Keuangan';
+protected static ?string $navigationLabel = 'Chart of Accounts (COA)'; // Biar keren
+protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
