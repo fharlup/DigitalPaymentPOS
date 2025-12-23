@@ -8,30 +8,34 @@ use App\Models\Kategori;
 use App\Models\Produk;
 use App\Models\Meja;
 use App\Models\Akun;
-use App\Models\Transaksi;       // Import Model Transaksi
-use App\Models\DetailTransaksi; // Import Model Detail
-use App\Models\Jurnal;          // Import Model Jurnal
-use App\Models\DetailJurnal;    // Import Model Detail Jurnal
+use App\Models\Transaksi;
+use App\Models\DetailTransaksi;
+use App\Models\Jurnal;
+use App\Models\DetailJurnal;
 use Illuminate\Support\Facades\Schema;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. BERSIHKAN DATA LAMA
+        // ==========================================
+        // 1. BERSIHKAN DATA LAMA (RESET TOTAL)
+        // ==========================================
         Schema::disableForeignKeyConstraints();
-        Meja::truncate();
-        Kategori::truncate();
+        DetailJurnal::truncate();
+        Jurnal::truncate();
+        DetailTransaksi::truncate();
+        Transaksi::truncate();
         Produk::truncate();
+        Kategori::truncate();
+        Meja::truncate();
         Akun::truncate();
         User::truncate();
-        Transaksi::truncate();       // Reset Transaksi
-        DetailTransaksi::truncate(); // Reset Detail
-        Jurnal::truncate();          // Reset Jurnal
-        DetailJurnal::truncate();    // Reset Detail Jurnal
         Schema::enableForeignKeyConstraints();
 
-        // 2. BUAT USER
+        // ==========================================
+        // 2. BUAT USER ADMIN & KASIR
+        // ==========================================
         User::factory()->create([
             'name' => 'Mbak Eni',
             'email' => 'admin@soto.com',
@@ -46,12 +50,16 @@ class DatabaseSeeder extends Seeder
             'password' => bcrypt('password'),
         ]);
 
-        // 3. BUAT AKUN AKUNTANSI (Master COA)
+        // ==========================================
+        // 3. BUAT AKUN AKUNTANSI (MASTER COA)
+        // ==========================================
         $akunKas = Akun::create(['kode_akun' => '111', 'nama_akun' => 'Kas Tunai', 'tipe' => 'debit']);
         $akunBank = Akun::create(['kode_akun' => '112', 'nama_akun' => 'Bank BCA (QRIS)', 'tipe' => 'debit']);
         $akunPendapatan = Akun::create(['kode_akun' => '411', 'nama_akun' => 'Pendapatan Penjualan', 'tipe' => 'kredit']);
 
+        // ==========================================
         // 4. BUAT DATA MEJA
+        // ==========================================
         $dataMeja = [];
         for ($i = 1; $i <= 20; $i++) {
             $dataMeja[] = ['nomor_meja' => 'Meja ' . $i, 'created_at' => now(), 'updated_at' => now()];
@@ -59,12 +67,16 @@ class DatabaseSeeder extends Seeder
         $dataMeja[] = ['nomor_meja' => 'Bungkus / Take Away', 'created_at' => now(), 'updated_at' => now()];
         Meja::insert($dataMeja);
 
+        // ==========================================
         // 5. BUAT KATEGORI
+        // ==========================================
         $katMakanan = Kategori::create(['nama_kategori' => 'Makanan Berat']);
         $katCamilan = Kategori::create(['nama_kategori' => 'Camilan & Tambahan']);
         $katMinuman = Kategori::create(['nama_kategori' => 'Minuman']);
 
-        // 6. BUAT PRODUK
+        // ==========================================
+        // 6. BUAT PRODUK (LENGKAP DENGAN DESKRIPSI)
+        // ==========================================
         $produkList = [];
 
         $produkList[] = Produk::create([
@@ -72,7 +84,7 @@ class DatabaseSeeder extends Seeder
             'nama_produk' => 'Soto Ayam Kampung',
             'harga' => 15000,
             'stok' => 50,
-            'deskripsi' => 'Soto kuah kuning bening dengan suwiran ayam kampung asli.',
+            'deskripsi' => 'Kuah kuning bening kaya rempah dengan suwiran ayam kampung asli yang gurih.',
         ]);
 
         $produkList[] = Produk::create([
@@ -80,7 +92,7 @@ class DatabaseSeeder extends Seeder
             'nama_produk' => 'Soto Daging Sapi',
             'harga' => 20000,
             'stok' => 40,
-            'deskripsi' => 'Potongan daging sapi empuk dengan kuah kaldu sapi asli.',
+            'deskripsi' => 'Potongan daging sapi tenderloin yang empuk dengan kuah kaldu sapi asli yang nendang.',
         ]);
 
         $produkList[] = Produk::create([
@@ -88,7 +100,15 @@ class DatabaseSeeder extends Seeder
             'nama_produk' => 'Sate Telur Puyuh',
             'harga' => 3000,
             'stok' => 100,
-            'deskripsi' => 'Sate telur puyuh bacem manis gurih.',
+            'deskripsi' => 'Sate telur puyuh bacem dengan bumbu manis gurih yang meresap sempurna.',
+        ]);
+
+        $produkList[] = Produk::create([
+            'kategori_id' => $katCamilan->id,
+            'nama_produk' => 'Perkedel Kentang',
+            'harga' => 2000,
+            'stok' => 50,
+            'deskripsi' => 'Perkedel kentang lembut dengan bumbu lada dan bawang goreng.',
         ]);
 
         $produkList[] = Produk::create([
@@ -96,36 +116,48 @@ class DatabaseSeeder extends Seeder
             'nama_produk' => 'Es Teh Manis',
             'harga' => 4000,
             'stok' => 200,
-            'deskripsi' => 'Teh melati wangi dengan gula asli.',
+            'deskripsi' => 'Teh melati wangi diseduh segar dengan gula asli dan es batu kristal.',
+        ]);
+        
+        $produkList[] = Produk::create([
+            'kategori_id' => $katMinuman->id,
+            'nama_produk' => 'Es Jeruk Peras',
+            'harga' => 6000,
+            'stok' => 50,
+            'deskripsi' => 'Jeruk peras asli (bukan sirup) yang kaya vitamin C, segar banget!',
         ]);
 
-        // ==========================================================
-        // 7. BUAT TRANSAKSI DUMMY & JURNAL (OTOMATIS)
-        // ==========================================================
+        // ==========================================
+        // 7. GENERATE TRANSAKSI & JURNAL DUMMY
+        // ==========================================
+        // Kita buat 10 transaksi acak biar laporannya ramai
         
-        // Kita buat 5 transaksi contoh
-        for ($i = 1; $i <= 5; $i++) {
+        for ($i = 1; $i <= 10; $i++) {
             
-            // Random metode bayar (Ganjil Tunai, Genap QRIS)
+            // Random: Metode Bayar (Ganjil=Tunai, Genap=QRIS)
             $metode = ($i % 2 != 0) ? 'tunai' : 'qris';
-            $akunDebit = ($metode == 'tunai') ? $akunKas : $akunBank;
+            
+            // Random: Tanggal Transaksi (Mundur 0-7 hari ke belakang)
+            $tanggal = now()->subDays(rand(0, 7))->subHours(rand(1, 12));
 
-            // A. Buat Header Transaksi
+            // A. Header Transaksi
             $transaksi = Transaksi::create([
                 'user_id' => 1,
-                'nama_pelanggan' => 'Pelanggan Dummy ' . $i,
-                'no_meja' => 'Meja ' . rand(1, 10),
-                'tanggal_transaksi' => now()->subHours($i), // Mundur beberapa jam
-                'total_harga' => 0, // Nanti diupdate
-                'status' => 'paid', // Status Lunas (Biar masuk jurnal)
+                'nama_pelanggan' => 'Pelanggan ' . $i,
+                'no_meja' => 'Meja ' . rand(1, 15),
+                'tanggal_transaksi' => $tanggal,
+                'total_harga' => 0, // Hitung nanti
+                'status' => 'paid', // Kita set LUNAS biar masuk laporan
                 'metode_pembayaran' => $metode,
+                'created_at' => $tanggal,
+                'updated_at' => $tanggal,
             ]);
 
-            // B. Buat Detail Item (Random beli 1-2 jenis produk)
+            // B. Detail Item (Beli 1 sampai 3 jenis barang acak)
             $totalBelanja = 0;
-            $randomProduk = collect($produkList)->random(rand(1, 2)); 
+            $randomItems = collect($produkList)->random(rand(1, 3)); 
 
-            foreach ($randomProduk as $prod) {
+            foreach ($randomItems as $prod) {
                 $qty = rand(1, 2);
                 $subtotal = $prod->harga * $qty;
                 
@@ -133,7 +165,9 @@ class DatabaseSeeder extends Seeder
                     'transaksi_id' => $transaksi->id,
                     'produk_id' => $prod->id,
                     'jumlah' => $qty,
-                    'subtotal' => $subtotal
+                    'subtotal' => $subtotal,
+                    'created_at' => $tanggal,
+                    'updated_at' => $tanggal,
                 ]);
                 
                 $totalBelanja += $subtotal;
@@ -142,27 +176,36 @@ class DatabaseSeeder extends Seeder
             // Update Total Harga di Header
             $transaksi->update(['total_harga' => $totalBelanja]);
 
-            // C. Buat Jurnal Akuntansi Otomatis
+            // C. JURNAL AKUNTANSI OTOMATIS
+            // Tentukan Debit kemana? (Tunai -> Kas, QRIS -> Bank)
+            $akunDebit = ($metode == 'tunai') ? $akunKas : $akunBank;
+
             $jurnal = Jurnal::create([
                 'transaksi_id' => $transaksi->id,
                 'keterangan' => 'Penjualan ' . strtoupper($metode) . ' #' . $transaksi->id,
-                'tanggal' => $transaksi->tanggal_transaksi,
+                'tanggal' => $tanggal,
+                'created_at' => $tanggal,
+                'updated_at' => $tanggal,
             ]);
 
-            // Debit (Uang Masuk ke Kas/Bank)
+            // Debit: Uang Masuk
             DetailJurnal::create([
                 'jurnal_id' => $jurnal->id,
                 'akun_id' => $akunDebit->id,
                 'debit' => $totalBelanja,
-                'kredit' => 0
+                'kredit' => 0,
+                'created_at' => $tanggal,
+                'updated_at' => $tanggal,
             ]);
 
-            // Kredit (Pendapatan Bertambah)
+            // Kredit: Pendapatan
             DetailJurnal::create([
                 'jurnal_id' => $jurnal->id,
                 'akun_id' => $akunPendapatan->id,
                 'debit' => 0,
-                'kredit' => $totalBelanja
+                'kredit' => $totalBelanja,
+                'created_at' => $tanggal,
+                'updated_at' => $tanggal,
             ]);
         }
     }

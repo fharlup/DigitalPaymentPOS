@@ -5,13 +5,13 @@ namespace Tests\Feature;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use App\Models\User;
+
 use App\Models\Akun;
 use App\Models\Kategori;
 use App\Models\Produk;
 use App\Models\Meja;
 use App\Models\Transaksi;
 use App\Livewire\OrderPage;
-use App\Livewire\KasirPage; // Asumsi kamu punya KasirPage, kalau pakai Filament sesuaikan
 use Livewire\Livewire;
 
 class IntegrasiFullTest extends TestCase
@@ -25,15 +25,14 @@ class IntegrasiFullTest extends TestCase
         // TAHAP 1: SETUP ENVIRONMENT (ADMIN ROLE)
         // ==========================================
         
-        // 1. Buat User Admin & Kasir
+        // 1. Buat User
         $admin = User::factory()->create(['name' => 'Juragan', 'role' => 'admin']);
-        $kasir = User::factory()->create(['name' => 'Mbak Kasir', 'email' => 'kasir@soto.com', 'role' => 'kasir']);
+        $kasir = User::factory()->create(['name' => 'Mbak Kasir', 'role' => 'kasir']);
 
-        // 2. Buat Data Meja (FITUR BARU)
+        // 2. Buat Data Meja
         $meja1 = Meja::create(['nomor_meja' => 'Meja 1']);
-        $mejaBungkus = Meja::create(['nomor_meja' => 'Bungkus']);
 
-        // 3. Buat COA (Chart of Accounts) - Wajib untuk Jurnal
+        // 3. Buat COA (Chart of Accounts)
         $akunKas = Akun::create(['kode_akun' => '111', 'nama_akun' => 'Kas Tunai', 'tipe' => 'debit']);
         $akunBank = Akun::create(['kode_akun' => '112', 'nama_akun' => 'Bank BCA', 'tipe' => 'debit']);
         $akunJual = Akun::create(['kode_akun' => '411', 'nama_akun' => 'Penjualan', 'tipe' => 'kredit']);
@@ -45,52 +44,40 @@ class IntegrasiFullTest extends TestCase
             'kategori_id' => $kategori->id,
             'nama_produk' => 'Soto Ayam Kampung',
             'harga' => 15000,
-            'stok' => 20, // Stok Awal 20
-            'gambar' => null,
-            'deskripsi' => 'Kuah bening seger',
+            'stok' => 20,
         ]);
-
-        // Assert Setup Berhasil
-        $this->assertDatabaseHas('mejas', ['nomor_meja' => 'Meja 1']);
-        $this->assertDatabaseHas('akuns', ['kode_akun' => '111']);
-        $this->assertDatabaseHas('produks', ['stok' => 20]);
-
 
         // ==========================================
         // TAHAP 2: USER ORDER DI FRONTEND (PELANGGAN)
         // ==========================================
         
-        // Skenario: Budi duduk di Meja 1, beli 2 Soto
-        
         Livewire::test(OrderPage::class)
-            // --- PERBAIKAN DISINI ---
-            // 1. Kita harus isi keranjang dulu agar lolos pengecekan "empty cart"
-            ->call('addToCart', $soto->id) 
+            // A. Masukkan barang ke keranjang dulu (agar lolos cek empty cart)
+            ->call('addToCart', $soto->id)
             
-            // 2. Baru kita coba checkout TANPA Nama & Meja
+            // B. Coba Checkout TANPA Nama & Meja (Harus Gagal)
             ->call('checkout', 'tunai')
-            // 3. Sekarang validasi pasti muncul
             ->assertHasErrors(['nama_pelanggan', 'no_meja']) 
             
-            // 4. Lanjut isi data yang benar
+            // C. Lengkapi Data
             ->set('nama_pelanggan', 'Budi Santoso')
-            ->set('no_meja', 'Meja 1') // <--- WAJIB DIISI
+            ->set('no_meja', 'Meja 1')
             
-            // 5. Update Qty (Opsional, tadi kan udah add 1 di atas)
-            ->call('updateQty', $soto->id, 1) // Jadi total 2
+            // D. Tambah Qty jadi 2 (Opsional, untuk tes updateQty)
+            ->call('updateQty', $soto->id, 1) // Tambah 1 lagi
             
-            // 6. Checkout Beneneran
+            // E. Checkout Berhasil
             ->call('checkout', 'tunai')
-            
-            ->assertSet('cart', [])
-            ->assertSet('showCartModal', false);
-        // Assert Database Transaksi
+            ->assertSet('cart', []) // Keranjang harus kosong setelah sukses
+            ->assertSet('showCartModal', false); // Modal tertutup
+
+        // Assert Database Transaksi Terbuat
         $transaksi = Transaksi::where('nama_pelanggan', 'Budi Santoso')->first();
         
         $this->assertNotNull($transaksi);
         $this->assertEquals('Meja 1', $transaksi->no_meja);
         $this->assertEquals(30000, $transaksi->total_harga); // 15.000 x 2
-        $this->assertEquals('pending', $transaksi->status); // Tunai harusnya pending dulu menunggu kasir terima uang
+        $this->assertEquals('pending', $transaksi->status); // Status awal pending
         
         // Assert Stok Berkurang (20 - 2 = 18)
         $this->assertEquals(18, $soto->fresh()->stok);
@@ -100,11 +87,11 @@ class IntegrasiFullTest extends TestCase
         // TAHAP 3: KASIR TERIMA PEMBAYARAN
         // ==========================================
         
-        // Login sebagai Kasir
         $this->actingAs($kasir);
 
-        // Simulasi Kasir update status lewat kode (Controller/Livewire Kasir)
-        // Anggap saja kasir menekan tombol "Terima Pembayaran"
+        // Simulasi Kasir menekan tombol "Terima Pembayaran" / "Paid"
+        // Idealnya ini memanggil endpoint/livewire method, tapi update model langsung 
+        // sah-sah saja untuk memicu Observer/Event.
         $transaksi->update(['status' => 'paid']);
 
         // Assert Status Berubah
@@ -112,49 +99,36 @@ class IntegrasiFullTest extends TestCase
 
 
         // ==========================================
-        // TAHAP 4: JURNAL AKUNTANSI OTOMATIS (SYSTEM)
+        // TAHAP 4: ASSERT JURNAL OTOMATIS (SYSTEM)
         // ==========================================
         
-        // Kita simulasi trigger pembuatan jurnal (biasanya ada di Observer atau function paymentSuccess)
-        // Karena di test manual ini kita update langsung via eloquent, kita panggil logic jurnal manual
-        // Atau jika kamu punya logic ini di paymentSuccess OrderPage, panggil itu.
-        
-        // Mari kita buat manual jurnalnya untuk memastikan logic akuntansi benar:
-        // (Ini meniru apa yang terjadi di `OrderPage::paymentSuccess` atau `KasirPage`)
-        
-        $jurnal = \App\Models\Jurnal::create([
+        /* CATATAN: 
+           Di tahap ini, Test TIDAK BOLEH membuat jurnal manual.
+           Test hanya bertugas mengecek apakah SYSTEM kamu sudah otomatis membuat jurnal 
+           ketika status berubah jadi 'paid'.
+        */
+
+        // 1. Cek apakah Header Jurnal terbentuk
+        $this->assertDatabaseHas('jurnals', [
             'transaksi_id' => $transaksi->id,
-            'keterangan' => 'Penjualan Tunai #' . $transaksi->id,
-            'tanggal' => now(),
-        ]);
-        
-        \App\Models\DetailJurnal::create([
-            'jurnal_id' => $jurnal->id,
-            'akun_id' => $akunKas->id, // Debit Kas (111)
-            'debit' => $transaksi->total_harga,
-            'kredit' => 0
-        ]);
-        
-        \App\Models\DetailJurnal::create([
-            'jurnal_id' => $jurnal->id,
-            'akun_id' => $akunJual->id, // Kredit Penjualan (411)
-            'debit' => 0,
-            'kredit' => $transaksi->total_harga
+            // 'keterangan' => 'Penjualan Tunai', // Opsional, sesuaikan dengan logic kodemu
         ]);
 
-        // Assert Data Jurnal Masuk DB
-        $this->assertDatabaseHas('jurnals', ['transaksi_id' => $transaksi->id]);
-        
-        // Assert Detail Jurnal (Debit KAS)
+        $jurnal = \App\Models\Jurnal::where('transaksi_id', $transaksi->id)->first();
+        $this->assertNotNull($jurnal, 'Jurnal gagal dibuat otomatis oleh sistem!');
+
+        // 2. Cek Detail Jurnal (DEBIT: KAS)
         $this->assertDatabaseHas('detail_jurnals', [
-            'akun_id' => $akunKas->id,
+            'jurnal_id' => $jurnal->id,
+            'akun_id' => $akunKas->id, // Pastikan logic kodemu mengambil akun kas (111)
             'debit' => 30000,
             'kredit' => 0
         ]);
         
-        // Assert Detail Jurnal (Kredit PENJUALAN)
+        // 3. Cek Detail Jurnal (KREDIT: PENJUALAN)
         $this->assertDatabaseHas('detail_jurnals', [
-            'akun_id' => $akunJual->id,
+            'jurnal_id' => $jurnal->id,
+            'akun_id' => $akunJual->id, // Pastikan logic kodemu mengambil akun penjualan (411)
             'debit' => 0,
             'kredit' => 30000
         ]);

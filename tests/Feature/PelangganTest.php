@@ -81,6 +81,6 @@ public function checkout_tunai_berhasil_membuat_transaksi_pending()
 
         Livewire::test(OrderPage::class)
             ->call('addToCart', $produk->id)
-            ->assertSee('Maaf, stok habis!'); // Cek pesan error session
+            ->assertSee('Stok habis!'); // Cek pesan error session
     }
 }

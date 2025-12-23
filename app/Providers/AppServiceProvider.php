@@ -4,7 +4,8 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Midtrans\Config; // <--- Pastikan ini ada
-
+use App\Observers\TransaksiObserver;
+use App\Models\Transaksi;
 class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -15,6 +16,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // 1. Konfigurasi Global Midtrans
+        Transaksi::observe(TransaksiObserver::class);
         Config::$serverKey = env('MIDTRANS_SERVER_KEY');
         Config::$isProduction = (bool) env('MIDTRANS_IS_PRODUCTION', false);
         Config::$isSanitized = true;
