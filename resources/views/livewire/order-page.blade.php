@@ -1,95 +1,136 @@
 <div x-data class="relative bg-gray-50 min-h-screen font-sans">
 
     {{-- ======================================================================== --}}
-    {{-- A. DAFTAR KARTU STATUS PESANAN (MULTI CARD)                              --}}
+    {{-- A. BAR STATUS PESANAN (STICKY PALING ATAS)                               --}}
     {{-- ======================================================================== --}}
     @if (count($activeTransactions) > 0)
         
-        {{-- Polling update status --}}
-        <div wire:poll.3s="refreshStatus" class="p-4 space-y-4 bg-orange-50 border-b border-orange-100 pb-8">
+        {{-- 
+             Z-INDEX TINGGI (z-50) AGAR SELALU DI ATAS MENU
+             x-data: Mengatur state 'open' (expand/collapse)
+             @scroll.window: Jika scroll > 50px, otomatis tutup (open = false)
+        --}}
+        <div x-data="{ open: true }" 
+             @scroll.window="open = (window.scrollY < 50)" 
+             class="sticky top-0 z-[60] bg-orange-50 shadow-md border-b border-orange-100 transition-all duration-300">
             
-            <h3 class="text-xs font-bold text-orange-400 uppercase tracking-widest text-center mb-2">Pesanan Aktif Kamu</h3>
-
-            @foreach ($activeTransactions as $trx)
-                <div class="bg-white rounded-2xl p-5 shadow-lg relative border border-gray-100 animate-slide-up overflow-hidden">
+            {{-- 1. HEADER BAR (SELALU MUNCUL & STICKY) --}}
+            <div class="flex justify-between items-center px-4 py-3 cursor-pointer h-[50px]" 
+                 @click="open = !open">
+                
+                <div class="flex items-center gap-3">
+                    {{-- Lampu Kedip --}}
+                    <span class="relative flex h-3 w-3">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                    </span>
                     
-                    {{-- TOMBOL CLOSE (X) --}}
-                    <button wire:click="closeTransaction({{ $trx->id }})" 
-                            class="absolute top-2 right-2 p-2 text-gray-300 hover:text-red-500 transition-colors z-20">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
+                    <div class="flex flex-col justify-center">
+                        <h3 class="text-xs font-black text-orange-600 uppercase tracking-widest leading-none">
+                            {{ count($activeTransactions) }} Pesanan Aktif
+                        </h3>
+                        {{-- Info tambahan saat mode kecil --}}
+                        <span x-show="!open" x-transition class="text-[9px] text-gray-500 font-bold mt-0.5 leading-none">
+                            Meja {{ $activeTransactions[0]->no_meja }} • Klik untuk detail
+                        </span>
+                    </div>
+                </div>
 
-                    <div class="flex justify-between items-start mb-3">
-                        <div class="flex items-center gap-3">
-                            {{-- Icon Status --}}
-                            @if ($trx->status == 'paid')
-                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600 shadow-sm">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                                </div>
-                            @else
-                                <div class="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600 shadow-sm animate-pulse">
-                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                </div>
-                            @endif
+                {{-- Panah --}}
+                <button class="text-orange-400 transform transition-transform duration-300" 
+                        :class="open ? 'rotate-180' : 'rotate-0'">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+            </div>
+
+            {{-- 2. DETAIL KARTU (AUTO HIDE SAAT SCROLL) --}}
+            <div x-show="open" 
+                 x-collapse 
+                 style="display: none;"
+                 class="bg-white border-t border-orange-100 shadow-inner max-h-[60vh] overflow-y-auto">
+                 
+                 <div class="p-4 space-y-3" wire:poll.3s="refreshStatus">
+                    @foreach ($activeTransactions as $trx)
+                        <div class="bg-white rounded-xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.08)] border border-gray-100 relative">
                             
-                            <div>
-                                <h4 class="font-bold text-gray-800 text-sm">Order #{{ $trx->id }}</h4>
-                                <p class="text-[10px] text-gray-400">{{ $trx->created_at->diffForHumans() }}</p>
+                            {{-- Tombol Close (X) --}}
+                            <button wire:click="closeTransaction({{ $trx->id }})" 
+                                    class="absolute top-2 right-2 p-1.5 text-gray-300 hover:text-red-500 bg-gray-50 rounded-full transition-colors z-20">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                            </button>
+
+                            <div class="flex gap-4">
+                                {{-- Icon Status --}}
+                                <div class="shrink-0 pt-1">
+                                    @if ($trx->status == 'paid')
+                                        <div class="w-10 h-10 bg-green-50 rounded-full flex items-center justify-center text-green-600 border border-green-100">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                                        </div>
+                                    @else
+                                        <div class="w-10 h-10 bg-yellow-50 rounded-full flex items-center justify-center text-yellow-600 border border-yellow-100 animate-pulse">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        </div>
+                                    @endif
+                                </div>
+
+                                {{-- Text Info --}}
+                                <div class="flex-1">
+                                    <div class="flex justify-between items-start mb-1 pr-6">
+                                        <h4 class="font-bold text-gray-800 text-sm">Meja {{ $trx->no_meja }}</h4>
+                                        <span class="text-[10px] px-2 py-0.5 rounded font-black uppercase {{ $trx->status == 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
+                                            {{ $trx->status == 'paid' ? 'Lunas' : 'Bayar' }}
+                                        </span>
+                                    </div>
+                                    
+                                    <p class="text-xs text-gray-500 mb-2">{{ $trx->nama_pelanggan }} • Rp {{ number_format($trx->total_harga) }}</p>
+
+                                    @if($trx->status == 'paid')
+                                        <div class="text-[10px] text-green-700 font-bold bg-green-50 px-2 py-1.5 rounded flex items-center gap-1">
+                                            <span>🍳 Sedang disiapkan</span>
+                                        </div>
+                                    @elseif($trx->metode_pembayaran == 'qris' && $trx->snap_token)
+                                        <button onclick="snap.pay('{{ $trx->snap_token }}')" class="w-full bg-orange-600 text-white py-1.5 rounded text-xs font-bold shadow hover:bg-orange-700">
+                                            Bayar QRIS
+                                        </button>
+                                    @else
+                                        <div class="text-[10px] text-yellow-700 font-bold bg-yellow-50 px-2 py-1.5 rounded">
+                                            Harap bayar di Kasir
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
                         </div>
-
-                        <div class="text-right mt-1 mr-6"> {{-- Mr-6 biar gak nabrak tombol X --}}
-                            @if ($trx->status == 'paid')
-                                <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-[10px] font-black tracking-wide uppercase">LUNAS</span>
-                            @else
-                                <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-[10px] font-black tracking-wide uppercase">MENUNGGU</span>
-                            @endif
-                        </div>
+                    @endforeach
+                    
+                    {{-- Footer Tutup --}}
+                    <div class="bg-gray-50 p-2 text-center border-t border-gray-100 cursor-pointer hover:bg-gray-100 rounded-b-xl" @click="open = false">
+                        <span class="text-[10px] font-bold text-gray-400 uppercase">Tutup Panel ▲</span>
                     </div>
-
-                    {{-- Detail Singkat --}}
-                    <div class="bg-gray-50 rounded-lg p-3 text-xs text-gray-600 space-y-1 mb-3">
-                        <div class="flex justify-between">
-                            <span>Meja: <strong class="text-gray-800">{{ $trx->no_meja }}</strong></span>
-                            <span>Total: <strong class="text-gray-800">Rp {{ number_format($trx->total_harga, 0, ',', '.') }}</strong></span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Metode: <span class="uppercase">{{ $trx->metode_pembayaran }}</span></span>
-                            <span>Atas Nama: <strong>{{ $trx->nama_pelanggan }}</strong></span>
-                        </div>
-                    </div>
-
-                    {{-- Pesan Status / Tombol Bayar --}}
-                    @if($trx->status == 'paid')
-                        <p class="text-green-600 text-xs font-bold text-center">
-                            Makanan sedang disiapkan. Selamat menikmati! 🍲
-                        </p>
-                    @elseif($trx->metode_pembayaran == 'qris' && $trx->snap_token)
-                        <button onclick="snap.pay('{{ $trx->snap_token }}')" class="w-full bg-orange-600 text-white py-2 rounded-lg font-bold text-xs shadow hover:bg-orange-700 transition-colors">
-                            Bayar QRIS Sekarang
-                        </button>
-                    @else
-                        <p class="text-yellow-600 text-xs font-bold text-center">
-                            Silakan bayar tunai ke Kasir.
-                        </p>
-                    @endif
-                </div>
-            @endforeach
-
+                 </div>
+            </div>
         </div>
     @endif
 
 
     {{-- ======================================================================== --}}
-    {{-- B. HALAMAN MENU & ORDER FORM (SELALU MUNCUL DI BAWAHNYA)               --}}
+    {{-- B. HEADER MENU & TAB KATEGORI                                            --}}
     {{-- ======================================================================== --}}
     
-    {{-- HEADER --}}
-    <div class="sticky top-0 z-40 bg-white shadow-sm">
+    {{-- 
+         LOGIC STICKY CERDAS:
+         Jika ada pesanan aktif (count > 0), Header ini 'sticky top-[50px]'. 
+         Artinya dia akan nempel DI BAWAH bar oranye, tidak menumpuk/tertutup.
+         Jika tidak ada pesanan, dia 'sticky top-0' (Normal).
+    --}}
+    <div class="sticky z-40 bg-white shadow-sm transition-all duration-300 {{ count($activeTransactions) > 0 ? 'top-[50px]' : 'top-0' }}">
+        
+        {{-- Brand --}}
         <div class="px-4 py-3 flex justify-between items-center border-b border-gray-100">
             <h1 class="text-xl font-black text-orange-600 tracking-tight">SOTO MBAK ENI</h1>
             <div class="text-[10px] font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded-full uppercase">Self Service</div>
         </div>
+
+        {{-- Tab Kategori --}}
         <div class="flex overflow-x-auto whitespace-nowrap no-scrollbar border-b border-gray-200">
             @foreach ($kategoris as $kategori)
                 <a href="#kategori-{{ $kategori->id }}" class="px-5 py-3 text-sm font-bold text-gray-600 uppercase border-b-2 border-transparent hover:text-orange-600 hover:border-orange-500 transition-colors snap-center">
@@ -99,10 +140,12 @@
         </div>
     </div>
 
-    {{-- KONTEN UTAMA --}}
+    {{-- ======================================================================== --}}
+    {{-- C. KONTEN MENU (FORM & LIST)                                             --}}
+    {{-- ======================================================================== --}}
     <div class="p-4 pb-32 max-w-[480px] mx-auto">
         
-        {{-- FORM INPUT --}}
+        {{-- Form Input --}}
         <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-8 space-y-4">
             <h3 class="text-xs font-black text-gray-800 uppercase tracking-widest border-b border-gray-100 pb-2 mb-2">Buat Pesanan Baru</h3>
             <div>
@@ -125,7 +168,7 @@
             </div>
         </div>
 
-        {{-- LIST MENU --}}
+        {{-- List Produk --}}
         @foreach ($kategoris as $kategori)
             <div id="kategori-{{ $kategori->id }}" class="scroll-mt-36 mb-8">
                 <h2 class="font-black text-gray-800 text-lg mb-4 flex items-center gap-2">
@@ -155,7 +198,7 @@
         @endforeach
     </div>
 
-    {{-- FLOATING BAR KERANJANG --}}
+    {{-- FLOATING KERANJANG --}}
     @if (!empty($cart) && !$showCartModal)
         <div class="fixed bottom-0 left-0 right-0 z-40 bg-yellow-400 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.1)] cursor-pointer animate-slide-up" wire:click="$set('showCartModal', true)">
             <div class="max-w-[480px] mx-auto flex justify-between items-center text-black">
