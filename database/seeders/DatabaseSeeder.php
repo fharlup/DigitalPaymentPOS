@@ -6,181 +6,164 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Kategori;
 use App\Models\Produk;
-use App\Models\Transaksi;
-use App\Models\DetailTransaksi;
 use App\Models\Meja;
 use App\Models\Akun;
-use Illuminate\Support\Facades\Hash;
-use Carbon\Carbon;
+use App\Models\Transaksi;       // Import Model Transaksi
+use App\Models\DetailTransaksi; // Import Model Detail
+use App\Models\Jurnal;          // Import Model Jurnal
+use App\Models\DetailJurnal;    // Import Model Detail Jurnal
+use Illuminate\Support\Facades\Schema;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1. BUAT USER ADMIN & KASIR
-        User::create([
-            'name' => 'Juragan Soto',
+        // 1. BERSIHKAN DATA LAMA
+        Schema::disableForeignKeyConstraints();
+        Meja::truncate();
+        Kategori::truncate();
+        Produk::truncate();
+        Akun::truncate();
+        User::truncate();
+        Transaksi::truncate();       // Reset Transaksi
+        DetailTransaksi::truncate(); // Reset Detail
+        Jurnal::truncate();          // Reset Jurnal
+        DetailJurnal::truncate();    // Reset Detail Jurnal
+        Schema::enableForeignKeyConstraints();
+
+        // 2. BUAT USER
+        User::factory()->create([
+            'name' => 'Mbak Eni',
             'email' => 'admin@soto.com',
-            'password' => Hash::make('password'), // Password: password
             'role' => 'admin',
+            'password' => bcrypt('password'),
         ]);
 
-        User::create([
-            'name' => 'Mbak Kasir',
+        User::factory()->create([
+            'name' => 'Kasir 1',
             'email' => 'kasir@soto.com',
-            'password' => Hash::make('password'),
             'role' => 'kasir',
+            'password' => bcrypt('password'),
         ]);
 
-        // 2. BUAT AKUN AKUNTANSI (COA)
-        Akun::insert([
-            ['kode_akun' => '111', 'nama_akun' => 'Kas Tunai', 'tipe' => 'debit'],
-            ['kode_akun' => '112', 'nama_akun' => 'Bank BCA', 'tipe' => 'debit'],
-            ['kode_akun' => '411', 'nama_akun' => 'Penjualan Makanan', 'tipe' => 'kredit'],
-        ]);
+        // 3. BUAT AKUN AKUNTANSI (Master COA)
+        $akunKas = Akun::create(['kode_akun' => '111', 'nama_akun' => 'Kas Tunai', 'tipe' => 'debit']);
+        $akunBank = Akun::create(['kode_akun' => '112', 'nama_akun' => 'Bank BCA (QRIS)', 'tipe' => 'debit']);
+        $akunPendapatan = Akun::create(['kode_akun' => '411', 'nama_akun' => 'Pendapatan Penjualan', 'tipe' => 'kredit']);
 
-        // 3. BUAT KATEGORI
+        // 4. BUAT DATA MEJA
+        $dataMeja = [];
+        for ($i = 1; $i <= 20; $i++) {
+            $dataMeja[] = ['nomor_meja' => 'Meja ' . $i, 'created_at' => now(), 'updated_at' => now()];
+        }
+        $dataMeja[] = ['nomor_meja' => 'Bungkus / Take Away', 'created_at' => now(), 'updated_at' => now()];
+        Meja::insert($dataMeja);
+
+        // 5. BUAT KATEGORI
         $katMakanan = Kategori::create(['nama_kategori' => 'Makanan Berat']);
         $katCamilan = Kategori::create(['nama_kategori' => 'Camilan & Tambahan']);
-        $katMinuman = Kategori::create(['nama_kategori' => 'Minuman Segar']);
+        $katMinuman = Kategori::create(['nama_kategori' => 'Minuman']);
 
-        // 4. BUAT PRODUK (MENU) - Total 8 Menu biar Grid 2 Kolom Kelihatan Bagus
-        $produks = [
-            [
-                'kategori_id' => $katMakanan->id,
-                'nama_produk' => 'Soto Ayam Kampung',
-                'harga' => 15000,
-                'stok' => 50,
-                'gambar' => null, // Biarkan null biar muncul icon 🍲
-                'deskripsi' => 'Soto dengan kuah kuning bening kaya rempah, disajikan dengan suwiran ayam kampung asli, soun, tauge, dan taburan koya gurih.',
-            ],
-            [
-                'kategori_id' => $katMakanan->id,
-                'nama_produk' => 'Soto Daging Sapi',
-                'harga' => 20000,
-                'stok' => 40,
-                'gambar' => null,
-                'deskripsi' => 'Soto enak',
-            ],
-            [
-                'kategori_id' => $katMakanan->id,
-                'nama_produk' => 'Nasi Putih',
-                'harga' => 5000,
-                'stok' => 100,
-                'gambar' => null,
-            ],
-            [
-                'kategori_id' => $katCamilan->id,
-                'nama_produk' => 'Perkedel Kentang',
-                'harga' => 3000,
-                'stok' => 50,
-                'gambar' => null,
-            ],
-            [
-                'kategori_id' => $katCamilan->id,
-                'nama_produk' => 'Sate Telur Puyuh',
-                'harga' => 5000,
-                'stok' => 30,
-                'gambar' => null,
-            ],
-            [
-                'kategori_id' => $katCamilan->id,
-                'nama_produk' => 'Kerupuk Kaleng',
-                'harga' => 2000,
-                'stok' => 100,
-                'gambar' => null,
-            ],
-            [
-                'kategori_id' => $katMinuman->id,
-                'nama_produk' => 'Es Jeruk Peras',
-                'harga' => 7000,
-                'stok' => 50,
-                'gambar' => null,
-            ],
-            [
-                'kategori_id' => $katMinuman->id,
-                'nama_produk' => 'Teh Manis Hangat',
-                'harga' => 4000,
-                'stok' => 100,
-                'gambar' => null,
-            ],
-        ];
+        // 6. BUAT PRODUK
+        $produkList = [];
 
-        foreach ($produks as $p) {
-            Produk::create($p);
-        }
+        $produkList[] = Produk::create([
+            'kategori_id' => $katMakanan->id,
+            'nama_produk' => 'Soto Ayam Kampung',
+            'harga' => 15000,
+            'stok' => 50,
+            'deskripsi' => 'Soto kuah kuning bening dengan suwiran ayam kampung asli.',
+        ]);
 
-        // 5. BUAT TRANSAKSI PALSU (7 HARI TERAKHIR) - Biar Grafik Dashboard Naik Turun
-        $allProduk = Produk::all();
+        $produkList[] = Produk::create([
+            'kategori_id' => $katMakanan->id,
+            'nama_produk' => 'Soto Daging Sapi',
+            'harga' => 20000,
+            'stok' => 40,
+            'deskripsi' => 'Potongan daging sapi empuk dengan kuah kaldu sapi asli.',
+        ]);
+
+        $produkList[] = Produk::create([
+            'kategori_id' => $katCamilan->id,
+            'nama_produk' => 'Sate Telur Puyuh',
+            'harga' => 3000,
+            'stok' => 100,
+            'deskripsi' => 'Sate telur puyuh bacem manis gurih.',
+        ]);
+
+        $produkList[] = Produk::create([
+            'kategori_id' => $katMinuman->id,
+            'nama_produk' => 'Es Teh Manis',
+            'harga' => 4000,
+            'stok' => 200,
+            'deskripsi' => 'Teh melati wangi dengan gula asli.',
+        ]);
+
+        // ==========================================================
+        // 7. BUAT TRANSAKSI DUMMY & JURNAL (OTOMATIS)
+        // ==========================================================
         
-        // Loop mundur 7 hari ke belakang
-        for ($i = 6; $i >= 0; $i--) {
-            // Random jumlah transaksi per hari (antara 2 s/d 8 transaksi)
-            $jumlahTransaksi = rand(2, 8);
+        // Kita buat 5 transaksi contoh
+        for ($i = 1; $i <= 5; $i++) {
             
-            for ($j = 0; $j < $jumlahTransaksi; $j++) {
-                $tanggal = Carbon::now()->subDays($i)->setTime(rand(8, 20), rand(0, 59));
+            // Random metode bayar (Ganjil Tunai, Genap QRIS)
+            $metode = ($i % 2 != 0) ? 'tunai' : 'qris';
+            $akunDebit = ($metode == 'tunai') ? $akunKas : $akunBank;
+
+            // A. Buat Header Transaksi
+            $transaksi = Transaksi::create([
+                'user_id' => 1,
+                'nama_pelanggan' => 'Pelanggan Dummy ' . $i,
+                'no_meja' => 'Meja ' . rand(1, 10),
+                'tanggal_transaksi' => now()->subHours($i), // Mundur beberapa jam
+                'total_harga' => 0, // Nanti diupdate
+                'status' => 'paid', // Status Lunas (Biar masuk jurnal)
+                'metode_pembayaran' => $metode,
+            ]);
+
+            // B. Buat Detail Item (Random beli 1-2 jenis produk)
+            $totalBelanja = 0;
+            $randomProduk = collect($produkList)->random(rand(1, 2)); 
+
+            foreach ($randomProduk as $prod) {
+                $qty = rand(1, 2);
+                $subtotal = $prod->harga * $qty;
                 
-                // Ambil produk acak
-                $produkAcak = $allProduk->random(rand(1, 3)); 
-                $totalHarga = 0;
-                
-                // Buat Transaksi Header
-                $transaksi = Transaksi::create([
-                    'user_id' => 1,
-                    'nama_pelanggan' => 'Pelanggan ' . rand(1, 100),
-                    'tanggal_transaksi' => $tanggal,
-                    'total_harga' => 0, // Nanti diupdate
-                    'status' => 'paid', // Langsung lunas biar masuk grafik income
-                    'metode_pembayaran' => rand(0, 1) ? 'tunai' : 'qris',
-                    'created_at' => $tanggal,
-                    'updated_at' => $tanggal,
+                DetailTransaksi::create([
+                    'transaksi_id' => $transaksi->id,
+                    'produk_id' => $prod->id,
+                    'jumlah' => $qty,
+                    'subtotal' => $subtotal
                 ]);
-
-                // Buat Detail Item
-                foreach ($produkAcak as $item) {
-                    $qty = rand(1, 2);
-                    $subtotal = $item->harga * $qty;
-                    $totalHarga += $subtotal;
-
-                    DetailTransaksi::create([
-                        'transaksi_id' => $transaksi->id,
-                        'produk_id' => $item->id,
-                        'jumlah' => $qty,
-                        'subtotal' => $subtotal,
-                        'created_at' => $tanggal,
-                        'updated_at' => $tanggal,
-                    ]);
-                }
-
-                // Update Total Harga Header
-                $transaksi->update(['total_harga' => $totalHarga]);
+                
+                $totalBelanja += $subtotal;
             }
-            
+
+            // Update Total Harga di Header
+            $transaksi->update(['total_harga' => $totalBelanja]);
+
+            // C. Buat Jurnal Akuntansi Otomatis
+            $jurnal = Jurnal::create([
+                'transaksi_id' => $transaksi->id,
+                'keterangan' => 'Penjualan ' . strtoupper($metode) . ' #' . $transaksi->id,
+                'tanggal' => $transaksi->tanggal_transaksi,
+            ]);
+
+            // Debit (Uang Masuk ke Kas/Bank)
+            DetailJurnal::create([
+                'jurnal_id' => $jurnal->id,
+                'akun_id' => $akunDebit->id,
+                'debit' => $totalBelanja,
+                'kredit' => 0
+            ]);
+
+            // Kredit (Pendapatan Bertambah)
+            DetailJurnal::create([
+                'jurnal_id' => $jurnal->id,
+                'akun_id' => $akunPendapatan->id,
+                'debit' => 0,
+                'kredit' => $totalBelanja
+            ]);
         }
-        // Bersihkan data lama biar gak duplikat kalau di-seed ulang
-        Meja::truncate(); 
-
-        $dataMeja = [];
-
-        // Loop buat Meja 1 sampai 20
-        for ($i = 1; $i <= 20; $i++) {
-            $dataMeja[] = [
-                'nomor_meja' => 'Meja ' . $i,
-                'created_at' => now(),
-                'updated_at' => now(),
-            ];
-        }
-
-        // Tambah opsi khusus Bungkus
-        $dataMeja[] = [
-            'nomor_meja' => 'Bungkus / Take Away',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ];
-
-        // Masukkan semua ke database sekaligus (lebih cepat)
-        Meja::insert($dataMeja);
-    
     }
 }
