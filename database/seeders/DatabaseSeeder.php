@@ -52,6 +52,7 @@ class DatabaseSeeder extends Seeder
                 'harga' => 15000,
                 'stok' => 50,
                 'gambar' => null, // Biarkan null biar muncul icon 🍲
+                'deskripsi' => 'Soto dengan kuah kuning bening kaya rempah, disajikan dengan suwiran ayam kampung asli, soun, tauge, dan taburan koya gurih.',
             ],
             [
                 'kategori_id' => $katMakanan->id,
@@ -59,6 +60,7 @@ class DatabaseSeeder extends Seeder
                 'harga' => 20000,
                 'stok' => 40,
                 'gambar' => null,
+                'deskripsi' => 'Soto enak',
             ],
             [
                 'kategori_id' => $katMakanan->id,

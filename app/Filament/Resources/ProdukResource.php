@@ -9,6 +9,7 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -39,6 +40,11 @@ class ProdukResource extends Resource
                             ->required()
                             ->maxLength(100)
                             ->label('Nama Menu'),
+                        Textarea::make('deskripsi')
+                ->label('Deskripsi Menu')
+                ->placeholder('Contoh: Kuah santan kental dengan irisan daging sapi pilihan.')
+                ->rows(3)
+                ->columnSpanFull(),
 
                         FileUpload::make('gambar')
                             ->image() 
@@ -56,11 +62,7 @@ class ProdukResource extends Resource
                             ->numeric()
                             ->default(0)
                             ->label('Stok Awal'),
-                        Textarea::make('deskripsi')
-                            ->label('Deskripsi Menu')
-                ->placeholder('Contoh: Kuah santan gurih dengan daging pilihan...')
-                ->rows(3)
-                ->columnSpanFull(),
+                        
 
                     ])->columns(2)
                     

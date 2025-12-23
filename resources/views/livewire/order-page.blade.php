@@ -220,7 +220,15 @@
                 <div class="p-6 flex-1 overflow-y-auto">
                     <div class="flex justify-between items-start mb-2"><h2 class="text-2xl font-black text-gray-800 uppercase leading-none">{{ $selectedProduct->nama_produk }}</h2><span class="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded-md border border-orange-200">Stok: {{ $selectedProduct->stok }}</span></div>
                     <p class="text-2xl font-black text-orange-600 mb-6 border-b border-gray-100 pb-4">Rp {{ number_format($selectedProduct->harga, 0, ',', '.') }}</p>
-                    <div class="space-y-2"><h4 class="font-bold text-gray-400 text-xs uppercase tracking-wider">Deskripsi Menu</h4><p class="text-gray-600 text-sm leading-relaxed">{{ $selectedProduct->deskripsi ?? 'Nikmati kelezatan ' . $selectedProduct->nama_produk }}</p></div>
+                    <div class="space-y-2">
+    <h4 class="font-bold text-gray-400 text-xs uppercase tracking-wider">Deskripsi Menu</h4>
+    
+    {{-- Ini akan menampilkan deskripsi dari database. 
+         Jika kosong, akan menampilkan teks default --}}
+    <p class="text-gray-600 text-sm leading-relaxed">
+        {{ $selectedProduct->deskripsi ?? 'Nikmati kelezatan ' . $selectedProduct->nama_produk . ' dengan resep spesial kami.' }}
+    </p>
+</div>
                 </div>
                 <div class="p-4 border-t border-gray-100 bg-gray-50">
                     @if($selectedProduct->stok > 0) <button wire:click="addToCart({{ $selectedProduct->id }}); closeDetail()" class="w-full bg-orange-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:bg-orange-700 active:scale-95 transition-all">TAMBAH KE PESANAN</button> @else <button disabled class="w-full bg-gray-300 text-gray-500 py-4 rounded-xl font-bold text-lg cursor-not-allowed">MAAF STOK HABIS</button> @endif
