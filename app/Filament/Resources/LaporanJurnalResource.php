@@ -3,16 +3,20 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LaporanJurnalResource\Pages;
-use App\Models\Jurnal; // <--- PENTING: Arahkan ke Model Jurnal
+use App\Models\Jurnal;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 
+// Import Library Excel
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
+use pxlrbt\FilamentExcel\Columns\Column;
+
 class LaporanJurnalResource extends Resource
 {
-    protected static ?string $model = Jurnal::class; // Pakai Model Jurnal
+    protected static ?string $model = Jurnal::class;
 
-    // Setting Nama Menu
     protected static ?string $navigationLabel = 'Jurnal Umum';
     protected static ?string $slug = 'laporan-jurnal-umum';
     protected static ?string $navigationGroup = 'Laporan Keuangan';
@@ -29,7 +33,7 @@ class LaporanJurnalResource extends Resource
                 Tables\Columns\TextColumn::make('keterangan')
                     ->searchable(),
                 
-                // Tampilan Custom HTML Debit/Kredit
+                // Tampilan di Website (Tetap pakai HTML biar cantik)
                 Tables\Columns\TextColumn::make('detailJurnals')
                     ->label('Rincian Jurnal')
                     ->html()
@@ -47,6 +51,39 @@ class LaporanJurnalResource extends Resource
                         $html .= '</ul>';
                         return $html;
                     }),
+            ])
+            ->headerActions([
+                // --- TOMBOL EXPORT EXCEL ---
+                ExportAction::make()
+                    ->label('Export Excel')
+                    ->color('success')
+                    ->exports([
+                        ExcelExport::make()
+                            ->fromTable()
+                            ->withFilename('Jurnal_Umum_' . date('Y-m-d'))
+                            ->withColumns([
+                                Column::make('tanggal')->heading('Tanggal'),
+                                Column::make('keterangan')->heading('Keterangan'),
+                                
+                                // KHUSUS EXCEL: Kita format ulang datanya agar tidak ada tag HTML
+                                Column::make('rincian_excel') // Nama dummy
+                                    ->heading('Rincian Transaksi')
+                                    ->formatStateUsing(function ($record) {
+                                        // Kita loop manual datanya untuk Excel
+                                        $lines = [];
+                                        foreach ($record->detailJurnals as $detail) {
+                                            $posisi = $detail->debit > 0 ? '(Debit)' : '(Kredit)';
+                                            $nominal = $detail->debit > 0 ? $detail->debit : $detail->kredit;
+                                            $akun = $detail->akun->nama_akun ?? '-';
+                                            
+                                            // Format: Kas (Debit): 50.000
+                                            $lines[] = "{$akun} {$posisi}: " . number_format($nominal, 0, ',', '.');
+                                        }
+                                        // Gabungkan dengan "Enter" (\n) agar menjadi list di dalam satu sel Excel
+                                        return implode("\n", $lines);
+                                    }),
+                            ]),
+                    ]),
             ])
             ->defaultSort('created_at', 'desc')
             ->actions([])

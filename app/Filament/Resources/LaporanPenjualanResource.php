@@ -3,7 +3,7 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\LaporanPenjualanResource\Pages;
-use App\Models\Transaksi; // <--- PENTING: Arahkan ke Model Transaksi
+use App\Models\Transaksi;
 use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
@@ -11,9 +11,14 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\Summarizers\Sum;
 
+// Import Library Excel
+use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
+use pxlrbt\FilamentExcel\Columns\Column;
+
 class LaporanPenjualanResource extends Resource
 {
-    protected static ?string $model = Transaksi::class; // Pakai Model Transaksi
+    protected static ?string $model = Transaksi::class;
 
     // Setting Nama Menu
     protected static ?string $navigationLabel = 'Laporan Penjualan';
@@ -25,7 +30,9 @@ class LaporanPenjualanResource extends Resource
     // Filter: Hanya ambil yang LUNAS
     public static function getEloquentQuery(): Builder
     {
-        return parent::getEloquentQuery()->where('status', 'paid')->orderBy('created_at', 'desc');
+        return parent::getEloquentQuery()
+            ->where('status', 'paid') // Hanya yang statusnya paid
+            ->orderBy('created_at', 'desc');
     }
 
     public static function table(Table $table): Table
@@ -48,6 +55,7 @@ class LaporanPenjualanResource extends Resource
                     ->color(fn (string $state): string => match ($state) {
                         'tunai' => 'success',
                         'qris' => 'info',
+                        default => 'gray',
                     }),
                 Tables\Columns\TextColumn::make('total_harga')
                     ->label('Omzet')
@@ -65,6 +73,28 @@ class LaporanPenjualanResource extends Resource
                             ->when($data['dari_tanggal'], fn (Builder $query, $date) => $query->whereDate('created_at', '>=', $date))
                             ->when($data['sampai_tanggal'], fn (Builder $query, $date) => $query->whereDate('created_at', '<=', $date));
                     })
+            ])
+            ->headerActions([
+                // --- TOMBOL EXPORT EXCEL ---
+                ExportAction::make()
+                    ->label('Export Laporan')
+                    ->color('success')
+                    ->exports([
+                        ExcelExport::make()
+                            ->fromTable() // PENTING: Agar filter Tanggal & Status Lunas ikut ter-export
+                            ->withFilename('Laporan_Penjualan_' . date('Y-m-d'))
+                            ->withColumns([
+                                Column::make('created_at')->heading('Waktu Transaksi'),
+                                Column::make('nama_pelanggan')->heading('Nama Pelanggan'),
+                                Column::make('no_meja')->heading('Nomor Meja'),
+                                Column::make('metode_pembayaran')->heading('Metode Bayar'),
+                                
+                                // Format Uang di Excel
+                                Column::make('total_harga')
+                                    ->heading('Omzet (Rp)')
+                                    ->format('Rp #,##0'),
+                            ]),
+                    ]),
             ])
             ->actions([]) // Read Only
             ->bulkActions([]);
