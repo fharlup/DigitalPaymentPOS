@@ -54,7 +54,7 @@
         @endif
 
         {{-- GRID SYSTEM: Responsive (1 kolom HP -> 4 kolom Desktop) --}}
-        <div wire:poll.5s class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div wire:poll.5s class="grid grid-cols-2">
             
             @forelse ($this->transaksis as $trx)
                 
