@@ -27,6 +27,7 @@ class OrderPage extends Component
 
     // --- PERUBAHAN DI SINI (JADI ARRAY) ---
     public $activeTransactions = []; 
+    //test
 
     protected $listeners = ['midtrans-error' => 'handleMidtransError'];
 
