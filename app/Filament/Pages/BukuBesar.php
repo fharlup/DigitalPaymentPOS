@@ -6,9 +6,8 @@ use Filament\Pages\Page;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\DatePicker;
-use Filament\Forms\Components\Section;
+use Filament\Forms\Components\Grid;
 use Filament\Actions\Action;
 use App\Models\Akun;
 use App\Models\DetailJurnal;
@@ -24,99 +23,97 @@ class BukuBesar extends Page implements HasForms
     protected static ?string $navigationGroup = 'Laporan Keuangan';
     protected static string $view = 'filament.pages.buku-besar';
 
-    // Properti untuk Filter
     public ?array $data = [];
-    
-    // Properti untuk Data Laporan
-    public $ledgerData = [];
-    public $saldoAwal = 0;
-    public $totalDebit = 0;
-    public $totalKredit = 0;
-    public $selectedAkun = null;
+    public $reportData = []; // Menampung data semua akun
 
     public function mount(): void
     {
-        // Default: Awal bulan ini sampai hari ini
         $this->form->fill([
             'start_date' => now()->startOfMonth()->format('Y-m-d'),
             'end_date' => now()->format('Y-m-d'),
-            'akun_id' => Akun::first()?->id, // Default akun pertama
         ]);
 
-        $this->filter(); // Load data awal
+        $this->filter();
     }
 
     public function form(Form $form): Form
     {
         return $form
             ->schema([
-                Section::make('Filter Laporan')
+                Grid::make(3) // Layout 3 kolom biar tombol Filter di kanan
                     ->schema([
-                        Select::make('akun_id')
-                            ->label('Pilih Akun')
-                            ->options(Akun::all()->pluck('nama_akun', 'id'))
-                            ->searchable()
-                            ->required()
-                            ->live(), // Auto reload jika ganti akun
-                            
                         DatePicker::make('start_date')
-                            ->label('Dari Tanggal')
+                            ->label('Tanggal Mulai')
                             ->required(),
-                            
                         DatePicker::make('end_date')
-                            ->label('Sampai Tanggal')
+                            ->label('Tanggal Akhir')
                             ->required(),
-                    ])
-                    ->columns(3)
+                    ]),
             ])->statePath('data');
     }
 
-    // Function yang dipanggil tombol "Tampilkan"
     public function filter()
     {
         $data = $this->form->getState();
-        $akunId = $data['akun_id'];
         $startDate = $data['start_date'];
         $endDate = $data['end_date'];
 
-        $this->selectedAkun = Akun::find($akunId);
+        // Ambil semua akun
+        $akuns = Akun::orderBy('kode_akun', 'asc')->get();
         
-        if (!$this->selectedAkun) return;
+        $this->reportData = [];
 
-        // 1. HITUNG SALDO AWAL (Transaksi SEBELUM start_date)
-        $historyBefore = DetailJurnal::where('akun_id', $akunId)
-            ->whereHas('jurnal', fn($q) => $q->where('tanggal', '<', $startDate))
-            ->get();
+        foreach ($akuns as $akun) {
+            // 1. Hitung Saldo Awal (Transaksi Sebelum Start Date)
+            $history = DetailJurnal::where('akun_id', $akun->id)
+                ->whereHas('jurnal', fn($q) => $q->where('tanggal', '<', $startDate))
+                ->get();
+            
+            $debitLalu = $history->sum('debit');
+            $kreditLalu = $history->sum('kredit');
 
-        // Rumus Saldo: Jika akun Debit (Harta/Beban) = Debit - Kredit
-        // Jika akun Kredit (Utang/Modal/Pendapatan) = Kredit - Debit
-        $isDebitAccount = $this->selectedAkun->tipe == 'debit'; 
+            // Cek Tipe Akun untuk Rumus
+            // Asumsi sederhana: Kode depan 1,5,6,8,9 = DEBIT. Sisanya KREDIT.
+            $kodeDepan = substr($akun->kode_akun, 0, 1);
+            $isDebit = in_array($kodeDepan, ['1', '5', '6', '8', '9']);
 
-        $debitAwal = $historyBefore->sum('debit');
-        $kreditAwal = $historyBefore->sum('kredit');
+            $saldoAwal = $isDebit ? ($debitLalu - $kreditLalu) : ($kreditLalu - $debitLalu);
 
-        $this->saldoAwal = $isDebitAccount 
-            ? ($debitAwal - $kreditAwal) 
-            : ($kreditAwal - $debitAwal);
+            // 2. Hitung Mutasi Periode Ini
+            $mutasi = DetailJurnal::where('akun_id', $akun->id)
+                ->whereHas('jurnal', fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate]))
+                ->get();
 
-        // 2. AMBIL TRANSAKSI PERIODE INI
-        $this->ledgerData = DetailJurnal::with('jurnal')
-            ->where('akun_id', $akunId)
-            ->whereHas('jurnal', fn($q) => $q->whereBetween('tanggal', [$startDate, $endDate]))
-            ->get()
-            ->sortBy(fn($detail) => $detail->jurnal->tanggal . $detail->created_at); // Urutkan tanggal lalu jam
+            $debitMutasi = $mutasi->sum('debit');
+            $kreditMutasi = $mutasi->sum('kredit');
 
-        // Hitung total mutasi periode ini
-        $this->totalDebit = $this->ledgerData->sum('debit');
-        $this->totalKredit = $this->ledgerData->sum('kredit');
+            // 3. Hitung Saldo Akhir
+            $saldoAkhir = $isDebit 
+                ? ($saldoAwal + $debitMutasi - $kreditMutasi)
+                : ($saldoAwal + $kreditMutasi - $debitMutasi);
+
+            // Masukkan ke array data hanya jika ada nilainya (Opsional, hapus if ini jika mau tampil semua)
+            // if ($saldoAwal != 0 || $debitMutasi != 0 || $kreditMutasi != 0) {
+                $this->reportData[] = [
+                    'id' => $akun->id,
+                    'kode' => $akun->kode_akun,
+                    'nama' => $akun->nama_akun,
+                    'tipe' => $akun->tipe ?? 'Umum', // Pastikan ada kolom tipe di tabel akun
+                    'saldo_awal' => $saldoAwal,
+                    'debit' => $debitMutasi,
+                    'kredit' => $kreditMutasi,
+                    'saldo_akhir' => $saldoAkhir,
+                ];
+            // }
+        }
     }
-    
-    // Tambahkan Tombol Filter di Header Form
+
     protected function getFormActions(): array
     {
         return [
             Action::make('filter')
-                ->label('Tampilkan Data')
+                ->label('Filter')
+                ->color('primary') // Warna hitam/gelap
                 ->submit('filter'),
         ];
     }

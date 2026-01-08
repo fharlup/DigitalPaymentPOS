@@ -7,7 +7,7 @@ use App\Models\DetailJurnal;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
-use Filament\Forms; // <--- PERBAIKAN 1: Tambahkan Import Ini
+use Filament\Forms; 
 use Filament\Tables\Columns\Summarizers\Sum;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -30,76 +30,82 @@ class LaporanBukuBesarResource extends Resource
     public static function table(Table $table): Table
     {
         return $table
+            // 1. GROUPING: Memisahkan per Transaksi
             ->groups([
                 Tables\Grouping\Group::make('jurnal.transaksi_id')
                     ->label('Nomor Transaksi')
                     ->collapsible(),
             ])
             ->columns([
+                // TANGGAL
                 Tables\Columns\TextColumn::make('jurnal.tanggal')
                     ->label('Tanggal')
-                    ->date('d M Y')
+                    ->date('d M Y') 
                     ->sortable(),
                 
-                Tables\Columns\TextColumn::make('jurnal.transaksi_id')
+                // REF (KODE AKUN) - Sesuai Kaidah Akuntansi
+                Tables\Columns\TextColumn::make('akun.kode_akun')
                     ->label('Ref')
-                    ->icon('heroicon-m-hashtag')
-                    ->prefix('#')
+                    ->fontFamily('mono') // Font ala mesin tik
                     ->sortable()
                     ->searchable(),
 
+                // NAMA AKUN
                 Tables\Columns\TextColumn::make('akun.nama_akun')
                     ->label('Akun')
-                    ->description(fn (DetailJurnal $record) => $record->akun->kode_akun ?? '-') 
+                    ->weight('bold') // Tebal biar jelas
                     ->searchable()
                     ->sortable(),
-                
+
+                // KETERANGAN
                 Tables\Columns\TextColumn::make('jurnal.keterangan')
                     ->label('Keterangan')
                     ->limit(40)
                     ->tooltip(fn (DetailJurnal $record) => $record->jurnal->keterangan),
                 
+                // DEBIT
                 Tables\Columns\TextColumn::make('debit')
                     ->label('Debit')
-                    ->money('IDR')
-                    ->color('success') 
-                    ->summarize(Sum::make()->label('Total Debit')),
+                    ->numeric(decimalPlaces: 0)
+                    ->color(fn ($state) => $state > 0 ? 'success' : 'gray') 
+                    ->summarize(Sum::make()->label('Total')->numeric(decimalPlaces: 0)),
                 
+                // KREDIT
                 Tables\Columns\TextColumn::make('kredit')
                     ->label('Kredit')
-                    ->money('IDR')
-                    ->color('danger') 
-                    ->summarize(Sum::make()->label('Total Kredit')),
+                    ->numeric(decimalPlaces: 0)
+                    ->color(fn ($state) => $state > 0 ? 'danger' : 'gray') 
+                    ->summarize(Sum::make()->label('Total')->numeric(decimalPlaces: 0)),
             ])
+            
+            // 2. SORTING: Tanggal ASC, lalu Debit di Atas
             ->defaultSort(fn ($query) => $query
-                ->orderBy('created_at', 'asc')
+                ->select('detail_jurnals.*') 
+                ->join('jurnals', 'detail_jurnals.jurnal_id', '=', 'jurnals.id')
+                ->orderBy('jurnals.tanggal', 'asc')
+                ->orderBy('jurnals.created_at', 'asc')
+                ->orderBy('detail_jurnals.debit', 'desc') // Debit Prioritas di Atas
             )
+            
             ->filters([
-                // Filter 1: Rentang Tanggal
+                // Filter Periode Tanggal
                 Tables\Filters\Filter::make('periode')
                     ->form([
-                        // PERBAIKAN 2: Menggunakan Forms\Components\DatePicker (bukan Tables\...)
                         Forms\Components\DatePicker::make('dari_tanggal')->label('Dari Tanggal'),
                         Forms\Components\DatePicker::make('sampai_tanggal')->label('Sampai Tanggal'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when(
-                                $data['dari_tanggal'],
-                                fn (Builder $q) => $q->whereHas('jurnal', fn($j) => $j->whereDate('tanggal', '>=', $data['dari_tanggal']))
-                            )
-                            ->when(
-                                $data['sampai_tanggal'],
-                                fn (Builder $q) => $q->whereHas('jurnal', fn($j) => $j->whereDate('tanggal', '<=', $data['sampai_tanggal']))
-                            );
+                            ->when($data['dari_tanggal'], fn ($q) => $q->whereHas('jurnal', fn($j) => $j->whereDate('tanggal', '>=', $data['dari_tanggal'])))
+                            ->when($data['sampai_tanggal'], fn ($q) => $q->whereHas('jurnal', fn($j) => $j->whereDate('tanggal', '<=', $data['sampai_tanggal'])));
                     }),
-
-                // Filter 2: Pilih Akun
+                
+                // Filter Akun
                 Tables\Filters\SelectFilter::make('akun_id')
                     ->label('Filter Akun')
                     ->relationship('akun', 'nama_akun')
-                    ->preload()
-                    ->searchable(),
+                    ->searchable()
+                    ->preload(),
             ])
             ->headerActions([
                 ExportAction::make()
@@ -109,12 +115,11 @@ class LaporanBukuBesarResource extends Resource
                     ->exports([
                         ExcelExport::make()
                             ->fromTable()
-                            ->withFilename('Laporan_Jurnal_Umum_' . date('Y-m-d'))
+                            ->withFilename('Jurnal_Umum_' . date('Y-m-d'))
                             ->withColumns([
                                 Column::make('jurnal.tanggal')->heading('Tanggal'),
-                                Column::make('jurnal.transaksi_id')->heading('No Ref'),
-                                Column::make('akun.kode_akun')->heading('Kode Akun'),
-                                Column::make('akun.nama_akun')->heading('Nama Akun'),
+                                Column::make('akun.kode_akun')->heading('Ref'), // Ref isinya Kode Akun
+                                Column::make('akun.nama_akun')->heading('Akun'),
                                 Column::make('jurnal.keterangan')->heading('Keterangan'),
                                 Column::make('debit')->heading('Debit'),
                                 Column::make('kredit')->heading('Kredit'),

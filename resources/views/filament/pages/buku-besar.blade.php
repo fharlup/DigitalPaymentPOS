@@ -1,122 +1,117 @@
 <x-filament-panels::page>
-    {{-- FORM FILTER --}}
-    {{ $this->form }}
     
-    <div class="flex justify-end mt-4">
-        <x-filament::button wire:click="filter">
-            Tampilkan Data
-        </x-filament::button>
+    {{-- FORM FILTER --}}
+    <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+        <div class="flex items-end gap-4">
+            <div class="flex-1">
+                {{ $this->form }}
+            </div>
+            <div class="mb-4">
+                 <x-filament::button wire:click="filter" class="bg-gray-800 hover:bg-gray-700 text-white">
+                    <x-heroicon-m-funnel class="w-4 h-4 inline mr-1"/> Filter
+                </x-filament::button>
+            </div>
+        </div>
     </div>
 
-    <hr class="my-6 border-gray-200">
-
     {{-- KONTEN LAPORAN --}}
-    @if($selectedAkun)
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            
-            {{-- Header Laporan --}}
-            <div class="p-6 bg-gray-50 border-b border-gray-200">
-                <h2 class="text-xl font-bold text-gray-800">{{ $selectedAkun->nama_akun }} ({{ $selectedAkun->kode_akun }})</h2>
-                <p class="text-sm text-gray-500">
-                    Periode: {{ \Carbon\Carbon::parse($data['start_date'])->format('d M Y') }} - {{ \Carbon\Carbon::parse($data['end_date'])->format('d M Y') }}
-                </p>
-                <span class="inline-block mt-2 px-3 py-1 text-xs font-bold rounded-full {{ $selectedAkun->tipe == 'debit' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700' }}">
-                    Saldo Normal: {{ strtoupper($selectedAkun->tipe) }}
-                </span>
-            </div>
-
-            {{-- Tabel --}}
-            <div class="overflow-x-auto">
-                <table class="w-full text-sm text-left">
-                    <thead class="bg-gray-100 text-gray-600 font-bold uppercase text-xs">
-                        <tr>
-                            <th class="px-6 py-3">Tanggal</th>
-                            <th class="px-6 py-3">No. Ref</th>
-                            <th class="px-6 py-3">Keterangan</th>
-                            <th class="px-6 py-3 text-right text-emerald-600">Debit</th>
-                            <th class="px-6 py-3 text-right text-red-600">Kredit</th>
-                            <th class="px-6 py-3 text-right bg-gray-50">Saldo</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                        
-                        {{-- BARIS 1: SALDO AWAL --}}
-                        <tr class="bg-yellow-50 font-medium">
-                            <td class="px-6 py-3" colspan="3">Saldo Awal</td>
-                            <td class="px-6 py-3 text-right">-</td>
-                            <td class="px-6 py-3 text-right">-</td>
-                            <td class="px-6 py-3 text-right font-bold">
-                                Rp {{ number_format($saldoAwal, 0, ',', '.') }}
-                            </td>
-                        </tr>
-
-                        {{-- VARIABLE UNTUK RUNNING BALANCE --}}
-                        @php
-                            $currentSaldo = $saldoAwal;
-                            $isDebit = $selectedAkun->tipe == 'debit';
-                        @endphp
-
-                        {{-- LOOP TRANSAKSI --}}
-                        @forelse($ledgerData as $row)
-                            @php
-                                // Hitung Saldo Berjalan
-                                if ($isDebit) {
-                                    $currentSaldo = $currentSaldo + $row->debit - $row->kredit;
-                                } else {
-                                    $currentSaldo = $currentSaldo + $row->kredit - $row->debit;
-                                }
-                            @endphp
-
-                            <tr class="hover:bg-gray-50 transition-colors">
-                                <td class="px-6 py-3 whitespace-nowrap">
-                                    {{ \Carbon\Carbon::parse($row->jurnal->tanggal)->format('d/m/Y') }}
-                                </td>
-                                <td class="px-6 py-3 text-blue-600">
-                                    #{{ $row->jurnal->transaksi_id ?? $row->jurnal->id }}
-                                </td>
-                                <td class="px-6 py-3">
-                                    {{ $row->jurnal->keterangan }}
-                                </td>
-                                <td class="px-6 py-3 text-right font-mono">
-                                    {{ $row->debit > 0 ? number_format($row->debit) : '-' }}
-                                </td>
-                                <td class="px-6 py-3 text-right font-mono">
-                                    {{ $row->kredit > 0 ? number_format($row->kredit) : '-' }}
-                                </td>
-                                <td class="px-6 py-3 text-right font-bold font-mono bg-gray-50">
-                                    Rp {{ number_format($currentSaldo, 0, ',', '.') }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-400">
-                                    Tidak ada transaksi pada periode ini.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                    
-                    {{-- FOOTER TOTAL --}}
-                    <tfoot class="bg-gray-100 font-bold border-t-2 border-gray-200">
-                        <tr>
-                            <td colspan="3" class="px-6 py-3 text-right uppercase">Total Mutasi & Saldo Akhir</td>
-                            <td class="px-6 py-3 text-right text-emerald-600">
-                                {{ number_format($totalDebit) }}
-                            </td>
-                            <td class="px-6 py-3 text-right text-red-600">
-                                {{ number_format($totalKredit) }}
-                            </td>
-                            <td class="px-6 py-3 text-right bg-gray-200 text-gray-900 text-base">
-                                Rp {{ number_format($currentSaldo, 0, ',', '.') }}
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+    <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        
+        {{-- HEADER COKLAT (Mirip Gambar) --}}
+        <div class="p-6 bg-[#3E2F29] text-white">
+            <h2 class="text-xl font-bold uppercase tracking-wide">KEDAI KOPI AMPUH</h2>
+            <p class="text-gray-300 text-sm font-medium mt-1">Buku Besar</p>
+            <p class="text-gray-400 text-xs mt-1">
+                Periode: {{ \Carbon\Carbon::parse($data['start_date'])->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($data['end_date'])->format('d/m/Y') }}
+            </p>
         </div>
-    @else
-        <div class="text-center py-12 bg-white rounded-xl shadow-sm border border-dashed border-gray-300">
-            <p class="text-gray-500">Silakan pilih akun dan periode tanggal lalu klik "Tampilkan Data".</p>
+
+        {{-- INFO BAR --}}
+        <div class="px-6 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+            <span class="text-sm text-gray-600">Total akun dengan data: <strong>{{ count($reportData) }}</strong></span>
+            <span class="text-xs text-blue-400 font-medium">Tipe yang ada: Aset, Pendapatan, Beban</span>
         </div>
-    @endif
+
+        {{-- TABEL --}}
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 text-gray-500 font-bold uppercase text-[11px] tracking-wider">
+                    <tr>
+                        <th class="px-6 py-4">KODE</th>
+                        <th class="px-6 py-4">NAMA AKUN</th>
+                        <th class="px-6 py-4 text-center">TIPE</th>
+                        <th class="px-6 py-4 text-right">SALDO AWAL</th>
+                        <th class="px-6 py-4 text-right">DEBIT</th>
+                        <th class="px-6 py-4 text-right">KREDIT</th>
+                        <th class="px-6 py-4 text-right">SALDO AKHIR</th>
+                        <th class="px-6 py-4 text-center">AKSI</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    @forelse($reportData as $row)
+                        <tr class="hover:bg-gray-50 transition-colors group">
+                            {{-- KODE --}}
+                            <td class="px-6 py-4 font-mono text-gray-600">
+                                {{ $row['kode'] }}
+                            </td>
+                            
+                            {{-- NAMA AKUN --}}
+                            <td class="px-6 py-4 font-medium text-gray-800">
+                                {{ $row['nama'] }}
+                            </td>
+                            
+                            {{-- TIPE (Badge) --}}
+                            <td class="px-6 py-4 text-center">
+                                @php
+                                    $badgeColor = match(strtolower($row['tipe'])) {
+                                        'aset', 'harta' => 'bg-green-100 text-green-700',
+                                        'beban', 'biaya' => 'bg-red-100 text-red-700',
+                                        'pendapatan' => 'bg-blue-100 text-blue-700',
+                                        'modal' => 'bg-purple-100 text-purple-700',
+                                        default => 'bg-gray-100 text-gray-600',
+                                    };
+                                @endphp
+                                <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase {{ $badgeColor }}">
+                                    {{ $row['tipe'] }}
+                                </span>
+                            </td>
+
+                            {{-- SALDO AWAL --}}
+                            <td class="px-6 py-4 text-right text-gray-500">
+                                Rp {{ number_format($row['saldo_awal'], 0, ',', '.') }}
+                            </td>
+
+                            {{-- DEBIT --}}
+                            <td class="px-6 py-4 text-right text-gray-500">
+                                Rp {{ number_format($row['debit'], 0, ',', '.') }}
+                            </td>
+
+                            {{-- KREDIT --}}
+                            <td class="px-6 py-4 text-right text-gray-500">
+                                Rp {{ number_format($row['kredit'], 0, ',', '.') }}
+                            </td>
+
+                            {{-- SALDO AKHIR (TEBAL) --}}
+                            <td class="px-6 py-4 text-right font-bold text-gray-900">
+                                Rp {{ number_format($row['saldo_akhir'], 0, ',', '.') }}
+                            </td>
+
+                            {{-- AKSI (TOMBOL MATA) --}}
+                            <td class="px-6 py-4 text-center">
+                                <button type="button" class="text-cyan-500 hover:text-cyan-700 bg-cyan-50 hover:bg-cyan-100 p-2 rounded-lg transition-all">
+                                    <x-heroicon-m-eye class="w-4 h-4"/>
+                                </button>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="8" class="text-center py-8 text-gray-400">
+                                Tidak ada data akun ditemukan.
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
 </x-filament-panels::page>
