@@ -69,6 +69,7 @@ protected static ?int $navigationSort = 0; // Paling ata
                     ->label('Meja')
                     ->badge() 
                     ->color('info') // Warna Biru
+                    //s
                     ->sortable(),
 
                 // 3. TOTAL HARGA
