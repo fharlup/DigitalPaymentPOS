@@ -155,10 +155,11 @@ class OrderPage extends Component
             if ($metode === 'qris') {
                 $this->processMidtrans($transaksi);
             }
+            //s
         });
     }
 
-    public function processMidtrans($transaksi)
+    public function processMidatrans($transaksi)
     {
         $params = [
             'transaction_details' => [ 'order_id' => 'SOTO-' . $transaksi->id . '-' . time(), 'gross_amount' => (int) $transaksi->total_harga ],
