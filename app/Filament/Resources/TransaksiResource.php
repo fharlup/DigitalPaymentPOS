@@ -14,38 +14,33 @@ class TransaksiResource extends Resource
 {
     protected static ?string $model = Transaksi::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar'; // Icon Dolar
+    protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
     protected static ?string $navigationLabel = 'Daftar Pesanan';
     protected static ?string $navigationGroup = 'Laporan Keuangan';
-protected static ?int $navigationSort = 0; // Paling ata
+    protected static ?int $navigationSort = 0;
+
+    // Form tetap dibutuhkan karena 'ViewAction' akan menggunakan schema ini untuk menampilkan detail
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('nama_pelanggan')
-                    ->label('Nama Pelanggan')
-                    ->required()
-                    ->maxLength(255),
-
-                // INI YANG PENTING: NOMOR MEJA
+                    ->label('Nama Pelanggan'), // Tidak perlu required/maxLength karena view only
+                
                 Forms\Components\TextInput::make('no_meja')
-                    ->label('Nomor Meja')
-                    ->disabled() // Admin cuma baca, ga usah edit
-                    ->dehydrated(false), // Biar ga error saat save
+                    ->label('Nomor Meja'),
 
                 Forms\Components\TextInput::make('total_harga')
                     ->label('Total Bayar')
                     ->numeric()
-                    ->prefix('Rp')
-                    ->readOnly(),
+                    ->prefix('Rp'),
 
                 Forms\Components\Select::make('status')
                     ->options([
                         'pending' => 'Belum Bayar',
                         'paid' => 'Lunas',
                         'failed' => 'Gagal',
-                    ])
-                    ->required(),
+                    ]),
                 
                 Forms\Components\Select::make('metode_pembayaran')
                     ->options([
@@ -59,35 +54,29 @@ protected static ?int $navigationSort = 0; // Paling ata
     {
         return $table
             ->columns([
-                // 1. NAMA PELANGGAN
                 Tables\Columns\TextColumn::make('nama_pelanggan')
                     ->searchable()
                     ->weight('bold'),
 
-                // 2. NOMOR MEJA (PENTING!)
                 Tables\Columns\TextColumn::make('no_meja')
                     ->label('Meja')
                     ->badge() 
-                    ->color('info') // Warna Biru
-                    //s
+                    ->color('info')
                     ->sortable(),
 
-                // 3. TOTAL HARGA
                 Tables\Columns\TextColumn::make('total_harga')
                     ->money('IDR')
                     ->sortable(),
 
-                // 4. STATUS PEMBAYARAN
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'paid' => 'success',   // Hijau
-                        'pending' => 'warning', // Kuning
-                        'failed' => 'danger',   // Merah
+                        'paid' => 'success',
+                        'pending' => 'warning',
+                        'failed' => 'danger',
                         default => 'gray',
                     }),
 
-                // 5. METODE BAYAR
                 Tables\Columns\TextColumn::make('metode_pembayaran')
                     ->badge()
                     ->color('gray'),
@@ -98,7 +87,6 @@ protected static ?int $navigationSort = 0; // Paling ata
                     ->sortable(),
             ])
             ->filters([
-                // Filter Lunas/Belum
                 Tables\Filters\SelectFilter::make('status')
                     ->options([
                         'paid' => 'Lunas',
@@ -106,7 +94,9 @@ protected static ?int $navigationSort = 0; // Paling ata
                     ]),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+                // GANTI EditAction MENJADI ViewAction
+                // Tables\Actions\EditAction::make(), <--- HAPUS INI
+                Tables\Actions\ViewAction::make(), // <--- PAKAI INI (Tombol Mata)
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -117,17 +107,22 @@ protected static ?int $navigationSort = 0; // Paling ata
 
     public static function getRelations(): array
     {
-        return [
-            //
-        ];
+        return [];
     }
 
     public static function getPages(): array
     {
         return [
+            // HAPUS route 'create' dan 'edit' agar tombol "New Transaksi" hilang otomatis
             'index' => Pages\ListTransaksis::route('/'),
-            'create' => Pages\CreateTransaksi::route('/create'),
-            'edit' => Pages\EditTransaksi::route('/{record}/edit'),
+            // 'create' => Pages\CreateTransaksi::route('/create'), // <--- HAPUS
+            // 'edit' => Pages\EditTransaksi::route('/{record}/edit'), // <--- HAPUS
         ];
+    }
+    
+    // TAMBAHAN: Memastikan tombol "New" benar-benar hilang secara logic
+    public static function canCreate(): bool
+    {
+        return false;
     }
 }
