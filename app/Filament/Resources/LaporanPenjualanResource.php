@@ -20,27 +20,28 @@ class LaporanPenjualanResource extends Resource
 {
     protected static ?string $model = Transaksi::class;
 
-    // --- BAGIAN INI YANG MENGUBAH JUDUL ---
-    protected static ?string $navigationLabel = 'Laporan Penjualan'; // Nama di Sidebar
-    protected static ?string $modelLabel = 'Laporan Penjualan';      // Nama Singular (buat tombol New dll)
-    protected static ?string $pluralModelLabel = 'Laporan Penjualan'; // Nama Plural (JUDUL HALAMAN BESAR)
+    protected static ?string $navigationLabel = 'Laporan Penjualan';
+    protected static ?string $modelLabel = 'Laporan Penjualan';
+    protected static ?string $pluralModelLabel = 'Laporan Penjualan';
     protected static ?string $slug = 'laporan-penjualan';
     
     protected static ?string $navigationGroup = 'Laporan Keuangan';
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
-    protected static ?int $navigationSort = 5;
+    protected static ?int $navigationSort = 5; // Urutan ke-5
 
-    // Filter: Hanya ambil yang LUNAS
+    // PERBAIKAN 1: Hapus filter 'paid' disini agar SEMUA data muncul
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('status', 'paid') 
-            ->orderBy('created_at', 'desc');
+            ->orderBy('created_at', 'desc'); // Pastikan yang terbaru paling atas
     }
 
     public static function table(Table $table): Table
     {
         return $table
+            // PERBAIKAN 2: Auto Refresh setiap 5 detik (biar data baru langsung nongol)
+            ->poll('5s')
+            
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal')
@@ -52,20 +53,38 @@ class LaporanPenjualanResource extends Resource
                 Tables\Columns\TextColumn::make('no_meja')
                     ->label('Meja')
                     ->badge()->color('warning'),
+                
+                // Tambahkan Kolom Status biar ketahuan mana yang Belum Bayar
+                Tables\Columns\TextColumn::make('status')
+                    ->label('Status')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'paid' => 'success',
+                        'pending' => 'warning',
+                        'failed' => 'danger',
+                        default => 'gray',
+                    }),
+
                 Tables\Columns\TextColumn::make('metode_pembayaran')
                     ->label('Metode')
                     ->badge()
-                    ->color(fn (string $state): string => match ($state) {
-                        'tunai' => 'success',
-                        'qris' => 'info',
-                        default => 'gray',
-                    }),
+                    ->color('gray'),
+
                 Tables\Columns\TextColumn::make('total_harga')
                     ->label('Omzet')
                     ->money('IDR')
                     ->summarize(Sum::make()->label('Total')),
             ])
             ->filters([
+                // PERBAIKAN 3: Filter Status dipindah kesini (Select)
+                Tables\Filters\SelectFilter::make('status')
+                    ->options([
+                        'paid' => 'Lunas',
+                        'pending' => 'Belum Bayar',
+                        'failed' => 'Gagal',
+                    ])
+                    ->label('Filter Status'),
+
                 Tables\Filters\Filter::make('created_at')
                     ->form([
                         Forms\Components\DatePicker::make('dari_tanggal'),
@@ -89,6 +108,7 @@ class LaporanPenjualanResource extends Resource
                                 Column::make('created_at')->heading('Waktu Transaksi'),
                                 Column::make('nama_pelanggan')->heading('Nama Pelanggan'),
                                 Column::make('no_meja')->heading('Nomor Meja'),
+                                Column::make('status')->heading('Status'),
                                 Column::make('metode_pembayaran')->heading('Metode Bayar'),
                                 Column::make('total_harga')
                                     ->heading('Omzet (Rp)')
@@ -96,7 +116,7 @@ class LaporanPenjualanResource extends Resource
                             ]),
                     ]),
             ])
-            ->actions([]) // Read Only
+            ->actions([]) 
             ->bulkActions([]);
     }
 

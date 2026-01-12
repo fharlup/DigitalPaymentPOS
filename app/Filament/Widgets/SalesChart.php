@@ -3,34 +3,42 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\ChartWidget;
+use App\Models\Transaksi;
+use Carbon\Carbon;
+use Flowframe\Trend\Trend;
+use Flowframe\Trend\TrendValue;
 
 class SalesChart extends ChartWidget
 {
-    protected static ?string $heading = 'Penjualan';
-    protected static ?int $sort = 3; 
+    protected static ?string $heading = 'Frekuensi Penjualan (30 Hari Terakhir)';
+    protected static ?int $sort = 3;
+    protected static string $color = 'success';
+    protected static ?string $pollingInterval = '10s';
 
     protected function getData(): array
     {
+        // PERBAIKAN: Masukkan filter langsung di dalam Trend::query()
+        $data = Trend::query(
+                Transaksi::whereIn('status', ['paid', 'done'])
+            )
+            ->between(
+                start: now()->subDays(29),
+                end: now(),
+            )
+            ->perDay()
+            ->count(); // Hitung jumlah
+
         return [
             'datasets' => [
                 [
-                    'label' => 'Bulan Kemarin',
-                    'data' => [65, 59, 80, 81, 56, 55, 40],
-                    'borderColor' => '#3b82f6', // Biru
-                    'backgroundColor' => 'rgba(59, 130, 246, 0.1)', // Biru transparan
+                    'label' => 'Jumlah Transaksi',
+                    'data' => $data->map(fn (TrendValue $value) => $value->aggregate),
+                    'borderColor' => '#10b981', // Hijau
                     'fill' => true,
-                    'tension' => 0.4, // Membuat garis melengkung halus
-                ],
-                [
-                    'label' => 'Bulan Ini',
-                    'data' => [28, 48, 40, 19, 86, 27, 90],
-                    'borderColor' => '#22c55e', // Hijau
-                    'backgroundColor' => 'rgba(34, 197, 94, 0.1)', // Hijau transparan
-                    'fill' => true,
-                    'tension' => 0.4,
+                    'backgroundColor' => 'rgba(16, 185, 129, 0.1)',
                 ],
             ],
-            'labels' => ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul'],
+            'labels' => $data->map(fn (TrendValue $value) => Carbon::parse($value->date)->format('d M')),
         ];
     }
 

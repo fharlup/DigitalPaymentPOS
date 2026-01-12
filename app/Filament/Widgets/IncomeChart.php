@@ -3,30 +3,40 @@
 namespace App\Filament\Widgets;
 
 use Filament\Widgets\ChartWidget;
+use App\Models\Transaksi;
+use Carbon\Carbon;
+use Flowframe\Trend\Trend;
+use Flowframe\Trend\TrendValue;
 
 class IncomeChart extends ChartWidget
 {
-    protected static ?string $heading = 'Total Pemasukan';
-    protected static ?int $sort = 2; // Urutan ke-2 setelah kotak statistik
+    protected static ?string $heading = 'Total Pemasukan (30 Hari Terakhir)';
+    protected static ?int $sort = 2;
+    protected static ?string $pollingInterval = '10s';
 
     protected function getData(): array
     {
+        // PERBAIKAN: Masukkan filter langsung di dalam Trend::query()
+        $data = Trend::query(
+                Transaksi::whereIn('status', ['paid', 'done'])
+            )
+            ->between(
+                start: now()->subDays(29),
+                end: now(),
+            )
+            ->perDay()
+            ->sum('total_harga'); // Jumlahkan total harga
+
         return [
             'datasets' => [
                 [
-                    'label' => 'Via POS',
-                    'data' => [14, 17, 6, 16, 12, 17, 21],
+                    'label' => 'Pemasukan (Rp)',
+                    'data' => $data->map(fn (TrendValue $value) => $value->aggregate),
                     'backgroundColor' => '#3b82f6', // Biru
                     'borderColor' => '#3b82f6',
                 ],
-                [
-                    'label' => 'Via Kasir',
-                    'data' => [12, 11, 23, 7, 11, 13, 11],
-                    'backgroundColor' => '#22c55e', // Hijau
-                    'borderColor' => '#22c55e',
-                ],
             ],
-            'labels' => ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'],
+            'labels' => $data->map(fn (TrendValue $value) => Carbon::parse($value->date)->format('d M')),
         ];
     }
 
