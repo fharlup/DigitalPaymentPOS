@@ -20,18 +20,21 @@ class LaporanPenjualanResource extends Resource
 {
     protected static ?string $model = Transaksi::class;
 
-    // Setting Nama Menu
-    protected static ?string $navigationLabel = 'Laporan Penjualan';
+    // --- BAGIAN INI YANG MENGUBAH JUDUL ---
+    protected static ?string $navigationLabel = 'Laporan Penjualan'; // Nama di Sidebar
+    protected static ?string $modelLabel = 'Laporan Penjualan';      // Nama Singular (buat tombol New dll)
+    protected static ?string $pluralModelLabel = 'Laporan Penjualan'; // Nama Plural (JUDUL HALAMAN BESAR)
     protected static ?string $slug = 'laporan-penjualan';
+    
     protected static ?string $navigationGroup = 'Laporan Keuangan';
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
-    protected static ?int $navigationSort = 1;
+    protected static ?int $navigationSort = 5;
 
     // Filter: Hanya ambil yang LUNAS
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->where('status', 'paid') // Hanya yang statusnya paid
+            ->where('status', 'paid') 
             ->orderBy('created_at', 'desc');
     }
 
@@ -75,21 +78,18 @@ class LaporanPenjualanResource extends Resource
                     })
             ])
             ->headerActions([
-                // --- TOMBOL EXPORT EXCEL ---
                 ExportAction::make()
                     ->label('Export Laporan')
                     ->color('success')
                     ->exports([
                         ExcelExport::make()
-                            ->fromTable() // PENTING: Agar filter Tanggal & Status Lunas ikut ter-export
+                            ->fromTable()
                             ->withFilename('Laporan_Penjualan_' . date('Y-m-d'))
                             ->withColumns([
                                 Column::make('created_at')->heading('Waktu Transaksi'),
                                 Column::make('nama_pelanggan')->heading('Nama Pelanggan'),
                                 Column::make('no_meja')->heading('Nomor Meja'),
                                 Column::make('metode_pembayaran')->heading('Metode Bayar'),
-                                
-                                // Format Uang di Excel
                                 Column::make('total_harga')
                                     ->heading('Omzet (Rp)')
                                     ->format('Rp #,##0'),

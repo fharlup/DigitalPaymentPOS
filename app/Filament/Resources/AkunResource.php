@@ -20,11 +20,11 @@ class AkunResource extends Resource
     protected static ?string $pluralModelLabel = 'Chart of Accounts (COA)'; // Nama jamak (di header tabel)
     
     // Ganti icon agar lebih cantik (opsional)
+    protected static ?int $navigationSort = 2;
     protected static ?string $title = ' COA';
     
     protected static ?string $navigationGroup = 'Laporan Keuangan';
 protected static ?string $navigationLabel = 'Chart of Accounts (COA)'; // Biar keren
-protected static ?int $navigationSort = 2;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 

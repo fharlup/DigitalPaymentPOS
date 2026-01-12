@@ -77,9 +77,6 @@
                                     {{ $trx->no_meja }}
                                 </div>
                             </div>
-                            <span class="px-2.5 py-1 rounded-lg text-xs font-bold border {{ $trx->status === 'paid' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-orange-50 text-orange-600 border-orange-100' }}">
-                                #{{ $trx->id }}
-                            </span>
                         </div>
 
                         {{-- Total Harga --}}

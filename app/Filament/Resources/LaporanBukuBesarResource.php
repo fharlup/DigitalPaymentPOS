@@ -24,9 +24,9 @@ class LaporanBukuBesarResource extends Resource
     protected static ?string $modelLabel = 'Jurnal Umum';      
     protected static ?string $pluralModelLabel = 'Jurnal Umum'; 
     protected static ?string $slug = 'jurnal-umum';
+    protected static ?int $navigationSort = 3;
     protected static ?string $navigationGroup = 'Laporan Keuangan';
     protected static ?string $navigationIcon = 'heroicon-o-table-cells';
-    protected static ?int $navigationSort = 3;
 
     public static function table(Table $table): Table
     {

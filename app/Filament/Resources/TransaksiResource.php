@@ -13,11 +13,11 @@ use Filament\Tables\Table;
 class TransaksiResource extends Resource
 {
     protected static ?string $model = Transaksi::class;
-
+    protected static ?int $navigationSort = 0;
     protected static ?string $navigationIcon = 'heroicon-o-currency-dollar';
     protected static ?string $navigationLabel = 'Daftar Pesanan';
+    protected static ?string $pluralModelLabel = 'Daftar Pesanan';
     protected static ?string $navigationGroup = 'Laporan Keuangan';
-    protected static ?int $navigationSort = 0;
 
     // Form tetap dibutuhkan karena 'ViewAction' akan menggunakan schema ini untuk menampilkan detail
     public static function form(Form $form): Form
