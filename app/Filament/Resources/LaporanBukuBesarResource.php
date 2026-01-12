@@ -21,16 +21,16 @@ class LaporanBukuBesarResource extends Resource
     protected static ?string $model = DetailJurnal::class;
 
     protected static ?string $navigationLabel = 'Jurnal Umum'; 
+    protected static ?string $modelLabel = 'Jurnal Umum';      
+    protected static ?string $pluralModelLabel = 'Jurnal Umum'; 
     protected static ?string $slug = 'jurnal-umum';
     protected static ?string $navigationGroup = 'Laporan Keuangan';
-
     protected static ?string $navigationIcon = 'heroicon-o-table-cells';
     protected static ?int $navigationSort = 3;
 
     public static function table(Table $table): Table
     {
         return $table
-            // 1. GROUPING: Memisahkan per Transaksi
             ->groups([
                 Tables\Grouping\Group::make('jurnal.transaksi_id')
                     ->label('Nomor Transaksi')
@@ -43,25 +43,27 @@ class LaporanBukuBesarResource extends Resource
                     ->date('d M Y') 
                     ->sortable(),
                 
-                // REF (KODE AKUN) - Sesuai Kaidah Akuntansi
+                // REF (Bersih: Kode Akun saja)
                 Tables\Columns\TextColumn::make('akun.kode_akun')
                     ->label('Ref')
-                    ->fontFamily('mono') // Font ala mesin tik
+                    ->fontFamily('mono')
                     ->sortable()
-                    ->searchable(),
+                    ->searchable(), 
 
                 // NAMA AKUN
                 Tables\Columns\TextColumn::make('akun.nama_akun')
                     ->label('Akun')
-                    ->weight('bold') // Tebal biar jelas
+                    ->weight('bold')
                     ->searchable()
                     ->sortable(),
 
-                // KETERANGAN
+                // --- KETERANGAN (YANG DIHAPUS # NYA) ---
                 Tables\Columns\TextColumn::make('jurnal.keterangan')
                     ->label('Keterangan')
+                    // Rumus: Cari tanda # diikuti angka, lalu hapus (ganti dengan string kosong)
+                    ->formatStateUsing(fn (string $state) => trim(preg_replace('/#\d+/', '', $state)))
                     ->limit(40)
-                    ->tooltip(fn (DetailJurnal $record) => $record->jurnal->keterangan),
+                    ->tooltip(fn (DetailJurnal $record) => trim(preg_replace('/#\d+/', '', $record->jurnal->keterangan))),
                 
                 // DEBIT
                 Tables\Columns\TextColumn::make('debit')
@@ -78,17 +80,16 @@ class LaporanBukuBesarResource extends Resource
                     ->summarize(Sum::make()->label('Total')->numeric(decimalPlaces: 0)),
             ])
             
-            // 2. SORTING: Tanggal ASC, lalu Debit di Atas
+            // SORTING
             ->defaultSort(fn ($query) => $query
                 ->select('detail_jurnals.*') 
                 ->join('jurnals', 'detail_jurnals.jurnal_id', '=', 'jurnals.id')
                 ->orderBy('jurnals.tanggal', 'asc')
                 ->orderBy('jurnals.created_at', 'asc')
-                ->orderBy('detail_jurnals.debit', 'desc') // Debit Prioritas di Atas
+                ->orderBy('detail_jurnals.debit', 'desc') 
             )
             
             ->filters([
-                // Filter Periode Tanggal
                 Tables\Filters\Filter::make('periode')
                     ->form([
                         Forms\Components\DatePicker::make('dari_tanggal')->label('Dari Tanggal'),
@@ -100,7 +101,6 @@ class LaporanBukuBesarResource extends Resource
                             ->when($data['sampai_tanggal'], fn ($q) => $q->whereHas('jurnal', fn($j) => $j->whereDate('tanggal', '<=', $data['sampai_tanggal'])));
                     }),
                 
-                // Filter Akun
                 Tables\Filters\SelectFilter::make('akun_id')
                     ->label('Filter Akun')
                     ->relationship('akun', 'nama_akun')
@@ -118,9 +118,10 @@ class LaporanBukuBesarResource extends Resource
                             ->withFilename('Jurnal_Umum_' . date('Y-m-d'))
                             ->withColumns([
                                 Column::make('jurnal.tanggal')->heading('Tanggal'),
-                                Column::make('akun.kode_akun')->heading('Ref'), // Ref isinya Kode Akun
+                                Column::make('akun.kode_akun')->heading('Ref'),
                                 Column::make('akun.nama_akun')->heading('Akun'),
-                                Column::make('jurnal.keterangan')->heading('Keterangan'),
+                                Column::make('jurnal.keterangan')->heading('Keterangan')
+                                    ->formatStateUsing(fn ($state) => trim(preg_replace('/#\d+/', '', $state))), // Excel juga dibersihkan
                                 Column::make('debit')->heading('Debit'),
                                 Column::make('kredit')->heading('Kredit'),
                             ]),

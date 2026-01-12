@@ -19,7 +19,7 @@ class BukuBesar extends Page implements HasForms
 
     protected static ?string $navigationIcon = 'heroicon-o-book-open';
     protected static ?string $navigationLabel = 'Buku Besar';
-    protected static ?string $title = 'Laporan Buku Besar';
+    protected static ?string $title = ' Buku Besar';
     protected static ?string $navigationGroup = 'Laporan Keuangan';
     protected static string $view = 'filament.pages.buku-besar';
 

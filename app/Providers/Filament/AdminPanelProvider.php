@@ -5,7 +5,6 @@ namespace App\Providers\Filament;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-
 use Filament\Pages;
 use Filament\Panel;
 use Filament\PanelProvider;
@@ -16,9 +15,8 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\AuthenticateSession;
-use Illuminate\Session\Middleware\StartSession; // <--- JANGAN LUPA INI
+use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use Illuminate\Support\Facades\Blade;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -30,27 +28,17 @@ class AdminPanelProvider extends PanelProvider
             ->path('admin')
             ->login()
             ->colors([
-            // Ganti 'primary' => Color::Purple menjadi:
-            'primary' => Color::Amber, // Atau Color::Orange
-            'gray' => Color::Slate,
-        ]) 
-            ->darkMode(false)
-            ->sidebarCollapsibleOnDesktop()
-            ->brandName('Soto Mbak Eni')
-            ->renderHook('panels::head.end', fn (): string => Blade::render('
-                <style>
-                    .fi-sidebar-item-active a {
-                        background: linear-gradient(to right, #6366f1, #a855f7) !important;
-                        color: white !important;
-                    }
-                    .fi-sidebar-item-active a svg {
-                        color: white !important;
-                    }
-                    body {
-                        background-color: #f8fafc;
-                    }
-                </style>
-            '))
+                'primary' => Color::Amber,
+            ])
+            
+            // --- TAMBAHKAN BAGIAN INI UNTUK MENGURUTKAN GRUP ---
+            ->navigationGroups([
+                'Dapur & Menu',      // Urutan 1
+                'Pengaturan',        // Urutan 2
+                'Laporan Keuangan',  // Urutan 3 (Paling Bawah)
+            ])
+            // ---------------------------------------------------
+
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
@@ -58,12 +46,13 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
-                // Widgets\AccountWidget::class,
+                Widgets\AccountWidget::class,
+                // Widgets\FilamentInfoWidget::class,
             ])
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,
-                StartSession::class,             // <--- PENYEBAB ERROR KAMU KARENA INI HILANG
+                StartSession::class,
                 AuthenticateSession::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
