@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-
+use Illuminate\Database\Eloquent\Relations\HasMany;
 class Transaksi extends Model
 {
     use HasFactory;
@@ -29,6 +29,10 @@ class Transaksi extends Model
 
     // Relasi ke Detail Transaksi (Item Belanjaan)
     public function details()
+    {
+        return $this->hasMany(DetailTransaksi::class);
+    }
+    public function detailTransaksi(): HasMany
     {
         return $this->hasMany(DetailTransaksi::class);
     }

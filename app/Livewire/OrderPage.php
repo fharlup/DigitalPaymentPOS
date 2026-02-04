@@ -35,16 +35,18 @@ class OrderPage extends Component
     }
 
     // --- 1. LOAD TRANSAKSI (Logic agar Pelanggan bisa memantau status) ---
-    public function loadActiveTransactions()
+   public function loadActiveTransactions()
     {
         // Ambil array ID transaksi dari session browser pelanggan
         $trxIds = session()->get('active_trx_ids', []);
         
         if (!empty($trxIds)) {
-            // Ambil data terbaru dari Database
-            // Ini kuncinya: Frontend akan tahu kalau Kasir sudah ubah status jadi 'paid'
+            // PERUBAHAN: 
+            // Saya MENGHAPUS "where('status', '!=', 'done')"
+            // Tujuannya: Agar pesanan yang sudah 'done' (Selesai) TETAP MUNCUL di layar HP pelanggan.
+            // Jadi tombol "Lihat Struk" tidak hilang.
+            
             $this->activeTransactions = Transaksi::whereIn('id', $trxIds)
-                ->where('status', '!=', 'done') // Hanya tampilkan yang belum selesai
                 ->orderBy('created_at', 'desc')
                 ->get();
         } else {

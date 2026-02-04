@@ -90,6 +90,10 @@
                                             <span class="animate-bounce">🍳</span> 
                                             <span>Pesanan sedang disiapkan dapur</span>
                                         </div>
+                                        <a href="{{ route('struk.digital', $trx->id) }}" target="_blank" 
+                                             class="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-[11px] font-bold border border-purple-200 hover:bg-purple-200 transition-colors flex items-center gap-1">
+                                         <span>📄</span> Struk
+                                        </a>
                                     @elseif($trx->metode_pembayaran == 'qris' && $trx->snap_token)
                                         <button onclick="snap.pay('{{ $trx->snap_token }}')" 
                                                 class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow hover:bg-blue-700 flex justify-center items-center gap-2">
