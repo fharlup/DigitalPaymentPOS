@@ -33,9 +33,21 @@ protected static ?string $navigationLabel = 'Chart of Accounts (COA)'; // Biar k
         return $form
             ->schema([
                 Forms\Components\TextInput::make('kode_akun')
-                ->required()
-                ->numeric()
-                ->label('Kode Akun (Cth: 111)'),
+                ->label('Kode Akun')
+    ->required()
+    ->numeric() // Opsional: kalau kode harus angka
+    
+    // --- TAMBAHKAN INI BIAR GAK DOBEL ---
+    ->unique(ignoreRecord: true) 
+    
+    ->validationMessages([
+        'unique' => 'Kode akun ini sudah dipakai, ganti yang lain ya.',
+    ]),
+                
+                
+            
+    	    
+                
                 
             Forms\Components\TextInput::make('nama_akun')
                 ->required()

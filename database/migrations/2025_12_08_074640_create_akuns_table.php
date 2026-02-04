@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('akuns', function (Blueprint $table) {
             $table->id();
-            $table->string('kode_akun'); 
+            $table->string('kode_akun')->unique(); 
     $table->string('nama_akun'); 
     $table->enum('tipe', ['debit', 'kredit']);
             $table->timestamps();
