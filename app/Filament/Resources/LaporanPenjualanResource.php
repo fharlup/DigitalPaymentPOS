@@ -47,9 +47,6 @@ class LaporanPenjualanResource extends Resource
                     ->label('Tanggal')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('nama_pelanggan')
-                    ->label('Pelanggan')
-                    ->searchable(),
                 Tables\Columns\TextColumn::make('no_meja')
                     ->label('Meja')
                     ->badge()->color('warning'),
