@@ -26,3 +26,7 @@ Impact & Results
 Efisiensi Operasional: Berhasil meningkatkan efisiensi pencatatan transaksi sebesar 40% dibandingkan metode manual.
 
 Digitalisasi Pembayaran: Mendukung transaksi nontunai sepenuhnya, memudahkan pelanggan dan mempercepat proses verifikasi pembayaran bagi pemilik usaha.
+![Dashboard Pembelian](docs/image.png)
+![Dashboard admin](docs/admin.png)
+![Dashboard Kasir](docs/kasir.png)
+![Paymnet](docs/qris.png)
