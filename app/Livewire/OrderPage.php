@@ -35,24 +35,19 @@ class OrderPage extends Component
     }
 
     // --- 1. LOAD TRANSAKSI (Logic agar Pelanggan bisa memantau status) ---
+ // --- 1. LOAD TRANSAKSI ---
    public function loadActiveTransactions()
     {
-        // Ambil array ID transaksi dari session browser pelanggan
         $trxIds = session()->get('active_trx_ids', []);
         
         if (!empty($trxIds)) {
-            // PERUBAHAN: 
-            // Saya MENGHAPUS "where('status', '!=', 'done')"
-            // Tujuannya: Agar pesanan yang sudah 'done' (Selesai) TETAP MUNCUL di layar HP pelanggan.
-            // Jadi tombol "Lihat Struk" tidak hilang.
-            
             $this->activeTransactions = Transaksi::whereIn('id', $trxIds)
-                ->orderBy('created_at', 'desc')
+                ->orderBy('created_at', 'desc') // Pastikan tidak ada ->where('status', '!=', 'done')
                 ->get();
         } else {
             $this->activeTransactions = [];
         }
-    }
+    } 
 
     // --- 2. POLLING (Dipanggil tiap 3 detik oleh wire:poll di blade) ---
     public function refreshStatus()

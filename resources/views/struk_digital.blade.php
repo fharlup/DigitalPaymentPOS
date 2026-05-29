@@ -93,6 +93,10 @@
                    class="block w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-bold text-sm shadow transition">
                    📲 Simpan / Kirim WhatsApp
                 </a>
+                <a href="{{ url('/') }}" 
+                   class="block w-full bg-orange-50 hover:bg-orange-100 text-orange-600 border border-orange-200 py-3 rounded-xl font-bold text-sm shadow-sm transition">
+                   🍽️ Kembali ke Menu / Pesan Lagi
+                </a>
             </div>
         </div>
     </div>

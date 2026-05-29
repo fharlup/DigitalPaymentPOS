@@ -77,23 +77,53 @@
                                         <h4 class="font-bold text-gray-800 text-sm">Meja {{ $trx->no_meja }}</h4>
                                         
                                         {{-- Badge Status --}}
-                                        <span class="text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-wide {{ $trx->status == 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                            {{ $trx->status == 'paid' ? 'Lunas' : 'Belum Bayar' }}
-                                        </span>
+                                        {{-- Badge Status --}}
+                                        @if($trx->status == 'done')
+                                            <span class="text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-wide bg-blue-100 text-blue-700">
+                                                Selesai
+                                            </span>
+                                        @elseif($trx->status == 'paid')
+                                            <span class="text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-wide bg-green-100 text-green-700">
+                                                Lunas
+                                            </span>
+                                        @else
+                                            <span class="text-[10px] px-2 py-0.5 rounded font-black uppercase tracking-wide bg-yellow-100 text-yellow-700">
+                                                Belum Bayar
+                                            </span>
+                                        @endif
                                     </div>
                                     
                                     <p class="text-xs text-gray-500 mb-2">{{ $trx->nama_pelanggan }} • <span class="font-bold text-gray-700">Rp {{ number_format($trx->total_harga) }}</span></p>
 
                                     {{-- Logika Tampilan Bawah Kartu --}}
-                                    @if($trx->status == 'paid')
-                                        <div class="text-[11px] text-green-700 font-bold bg-green-50 px-3 py-2 rounded-lg flex items-center gap-2 border border-green-100">
-                                            <span class="animate-bounce">🍳</span> 
-                                            <span>Pesanan sedang disiapkan dapur</span>
+                                   
+                                    {{-- Logika Tampilan Bawah Kartu --}}
+                                    @if($trx->status == 'done')
+                                        <div class="flex gap-2 flex-wrap">
+                                            <div class="text-[11px] text-blue-700 font-bold bg-blue-50 px-3 py-2 rounded-lg flex-1 border border-blue-100 flex items-center gap-2">
+                                                <span>✅</span> 
+                                                <span>Selesai. Selamat menikmati!</span>
+                                            </div>
+                                            
+                                            <a href="{{ route('struk.digital', $trx->id) }}" target="_blank" 
+                                               class="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-[11px] font-bold border border-purple-200 hover:bg-purple-200 transition-colors flex items-center gap-1">
+                                                <span>📄</span> Lihat Struk
+                                            </a>
                                         </div>
-                                        <a href="{{ route('struk.digital', $trx->id) }}" target="_blank" 
-                                             class="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-[11px] font-bold border border-purple-200 hover:bg-purple-200 transition-colors flex items-center gap-1">
-                                         <span>📄</span> Struk
-                                        </a>
+
+                                    @elseif($trx->status == 'paid')
+                                        <div class="flex gap-2 flex-wrap">
+                                            <div class="text-[11px] text-green-700 font-bold bg-green-50 px-3 py-2 rounded-lg flex-1 border border-green-100 flex items-center gap-2">
+                                                <span class="animate-bounce">🍳</span> 
+                                                <span>Pesanan disiapkan</span>
+                                            </div>
+                                            
+                                            <a href="{{ route('struk.digital', $trx->id) }}" target="_blank" 
+                                               class="px-3 py-2 bg-purple-100 text-purple-700 rounded-lg text-[11px] font-bold border border-purple-200 hover:bg-purple-200 transition-colors flex items-center gap-1">
+                                                <span>📄</span> Struk
+                                            </a>
+                                        </div>
+
                                     @elseif($trx->metode_pembayaran == 'qris' && $trx->snap_token)
                                         <button onclick="snap.pay('{{ $trx->snap_token }}')" 
                                                 class="w-full bg-blue-600 text-white py-2 rounded-lg text-xs font-bold shadow hover:bg-blue-700 flex justify-center items-center gap-2">
