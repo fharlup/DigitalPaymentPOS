@@ -78,6 +78,24 @@
                                 </div>
                             </div>
                         </div>
+                        {{-- 👇 INI TAMBAHAN RINCIAN PESANANNYA 👇 --}}
+                        <div class="mb-4 bg-gray-50 p-3 rounded-lg border border-gray-100 flex-1">
+                            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Daftar Menu</p>
+                            <ul class="space-y-1.5 overflow-y-auto max-h-32 pr-1 custom-scrollbar">
+                                @foreach($trx->detailTransaksi as $detail)
+                                    <li class="flex justify-between text-sm">
+                                        <span class="text-gray-700">
+                                            <span class="font-bold text-gray-900">{{ $detail->jumlah }}x</span> 
+                                            {{ $detail->produk->nama_produk ?? 'Menu Dihapus' }}
+                                        </span>
+                                        <span class="font-medium text-gray-500">
+                                            Rp {{ number_format($detail->subtotal, 0, ',', '.') }}
+                                        </span>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        {{-- 👆 SAMPAI SINI 👆 --}}
 
                         {{-- Total Harga --}}
                         <div class="mb-6 pt-4 border-t border-dashed border-gray-100">

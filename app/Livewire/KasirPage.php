@@ -13,12 +13,14 @@ use Midtrans\Snap;
 class KasirPage extends Component
 {
     // Mengambil pesanan Pending (Belum Bayar) DAN Paid (Belum Diantar)
+   // Mengambil pesanan Pending (Belum Bayar) DAN Paid (Belum Diantar)
     public function getTransaksisProperty()
     {
-        return Transaksi::whereIn('status', ['pending', 'paid']) // <--- Perubahan Disini
+        return Transaksi::with(['detailTransaksi.produk']) // <--- TAMBAHAN: Tarik data relasi rincian pesanan dan nama produknya
+            ->whereIn('status', ['pending', 'paid'])
             ->orderBy('created_at', 'desc') // Pesanan baru di atas
             ->get();
-    }
+    } 
 
     // LOGIC 1: Bayar Tunai
     public function bayarTunai($transaksiId)
