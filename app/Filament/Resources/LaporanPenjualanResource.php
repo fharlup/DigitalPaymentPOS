@@ -8,10 +8,10 @@ use Filament\Forms;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Enums\FiltersLayout;
 use Illuminate\Database\Eloquent\Builder;
 use Filament\Tables\Columns\Summarizers\Sum;
 
-// Import Library Excel
 use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use pxlrbt\FilamentExcel\Columns\Column;
@@ -24,42 +24,40 @@ class LaporanPenjualanResource extends Resource
     protected static ?string $modelLabel = 'Laporan Penjualan';
     protected static ?string $pluralModelLabel = 'Laporan Penjualan';
     protected static ?string $slug = 'laporan-penjualan';
-    
     protected static ?string $navigationGroup = 'Laporan Keuangan';
     protected static ?string $navigationIcon = 'heroicon-o-chart-bar';
-    protected static ?int $navigationSort = 5; // Urutan ke-5
+    protected static ?int $navigationSort = 5;
 
-    // PERBAIKAN 1: Hapus filter 'paid' disini agar SEMUA data muncul
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->orderBy('created_at', 'desc'); // Pastikan yang terbaru paling atas
+            ->orderBy('created_at', 'desc');
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            // PERBAIKAN 2: Auto Refresh setiap 5 detik (biar data baru langsung nongol)
             ->poll('5s')
-            
             ->columns([
                 Tables\Columns\TextColumn::make('created_at')
                     ->label('Tanggal')
                     ->dateTime('d M Y H:i')
                     ->sortable(),
+
                 Tables\Columns\TextColumn::make('no_meja')
                     ->label('Meja')
-                    ->badge()->color('warning'),
-                
-                // Tambahkan Kolom Status biar ketahuan mana yang Belum Bayar
+                    ->badge()
+                    ->color('warning'),
+
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'paid' => 'success',
+                        'paid'    => 'success',
                         'pending' => 'warning',
-                        'failed' => 'danger',
-                        default => 'gray',
+                        'failed'  => 'danger',
+                        'done'    => 'info',
+                        default   => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('metode_pembayaran')
@@ -69,30 +67,55 @@ class LaporanPenjualanResource extends Resource
 
                 Tables\Columns\TextColumn::make('total_harga')
                     ->label('Omzet')
-                    ->money('IDR')
-                    ->summarize(Sum::make()->label('Total')),
+                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 0, ',', '.'))
+                    ->summarize(Sum::make()->label('Total')->numeric(decimalPlaces: 0)),
             ])
             ->filters([
-                // PERBAIKAN 3: Filter Status dipindah kesini (Select)
                 Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
                     ->options([
-                        'paid' => 'Lunas',
+                        'paid'    => 'Lunas',
                         'pending' => 'Belum Bayar',
-                        'failed' => 'Gagal',
-                    ])
-                    ->label('Filter Status'),
+                        'failed'  => 'Gagal',
+                        'done'    => 'Selesai',
+                    ]),
 
                 Tables\Filters\Filter::make('created_at')
                     ->form([
-                        Forms\Components\DatePicker::make('dari_tanggal'),
-                        Forms\Components\DatePicker::make('sampai_tanggal'),
+                        Forms\Components\DatePicker::make('dari_tanggal')
+                            ->label('Dari Tanggal')
+                            ->native(false)
+                            ->displayFormat('d/m/Y'),
+                        Forms\Components\DatePicker::make('sampai_tanggal')
+                            ->label('Sampai Tanggal')
+                            ->native(false)
+                            ->displayFormat('d/m/Y'),
                     ])
                     ->query(function (Builder $query, array $data): Builder {
                         return $query
-                            ->when($data['dari_tanggal'], fn (Builder $query, $date) => $query->whereDate('created_at', '>=', $date))
-                            ->when($data['sampai_tanggal'], fn (Builder $query, $date) => $query->whereDate('created_at', '<=', $date));
+                            ->when(
+                                filled($data['dari_tanggal'] ?? null),
+                                fn ($q) => $q->whereDate('created_at', '>=', $data['dari_tanggal'])
+                            )
+                            ->when(
+                                filled($data['sampai_tanggal'] ?? null),
+                                fn ($q) => $q->whereDate('created_at', '<=', $data['sampai_tanggal'])
+                            );
                     })
-            ])
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if (filled($data['dari_tanggal'] ?? null)) {
+                            $indicators[] = 'Dari: ' . \Carbon\Carbon::parse($data['dari_tanggal'])->format('d/m/Y');
+                        }
+                        if (filled($data['sampai_tanggal'] ?? null)) {
+                            $indicators[] = 'Sampai: ' . \Carbon\Carbon::parse($data['sampai_tanggal'])->format('d/m/Y');
+                        }
+                        return $indicators;
+                    }),
+
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
+
             ->headerActions([
                 ExportAction::make()
                     ->label('Export Laporan')
@@ -107,13 +130,11 @@ class LaporanPenjualanResource extends Resource
                                 Column::make('no_meja')->heading('Nomor Meja'),
                                 Column::make('status')->heading('Status'),
                                 Column::make('metode_pembayaran')->heading('Metode Bayar'),
-                                Column::make('total_harga')
-                                    ->heading('Omzet (Rp)')
-                                    ->format('Rp #,##0'),
+                                Column::make('total_harga')->heading('Omzet (Rp)'),
                             ]),
                     ]),
             ])
-            ->actions([]) 
+            ->actions([])
             ->bulkActions([]);
     }
 

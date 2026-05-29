@@ -9,6 +9,8 @@ use Filament\Forms\Form;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Enums\FiltersLayout;
+use Illuminate\Database\Eloquent\Builder;
 
 class TransaksiResource extends Resource
 {
@@ -19,13 +21,12 @@ class TransaksiResource extends Resource
     protected static ?string $pluralModelLabel = 'Daftar Pesanan';
     protected static ?string $navigationGroup = 'Laporan Keuangan';
 
-    // Form tetap dibutuhkan karena 'ViewAction' akan menggunakan schema ini untuk menampilkan detail
     public static function form(Form $form): Form
     {
         return $form
             ->schema([
                 Forms\Components\TextInput::make('nama_pelanggan')
-                    ->label('Nama Pelanggan'), // Tidak perlu required/maxLength karena view only
+                    ->label('Nama Pelanggan'),
                 
                 Forms\Components\TextInput::make('no_meja')
                     ->label('Nomor Meja'),
@@ -38,14 +39,15 @@ class TransaksiResource extends Resource
                 Forms\Components\Select::make('status')
                     ->options([
                         'pending' => 'Belum Bayar',
-                        'paid' => 'Lunas',
-                        'failed' => 'Gagal',
+                        'paid'    => 'Lunas',
+                        'failed'  => 'Gagal',
+                        'done'    => 'Selesai',
                     ]),
                 
                 Forms\Components\Select::make('metode_pembayaran')
                     ->options([
                         'tunai' => 'Tunai (Cash)',
-                        'qris' => 'QRIS (Online)',
+                        'qris'  => 'QRIS (Online)',
                     ]),
             ]);
     }
@@ -60,21 +62,22 @@ class TransaksiResource extends Resource
 
                 Tables\Columns\TextColumn::make('no_meja')
                     ->label('Meja')
-                    ->badge() 
+                    ->badge()
                     ->color('info')
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('total_harga')
-                    ->money('IDR')
+                    ->formatStateUsing(fn ($state) => 'Rp ' . number_format($state, 0, ',', '.'))
                     ->sortable(),
 
                 Tables\Columns\TextColumn::make('status')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'paid' => 'success',
+                        'paid'    => 'success',
                         'pending' => 'warning',
-                        'failed' => 'danger',
-                        default => 'gray',
+                        'failed'  => 'danger',
+                        'done'    => 'info',
+                        default   => 'gray',
                     }),
 
                 Tables\Columns\TextColumn::make('metode_pembayaran')
@@ -88,15 +91,50 @@ class TransaksiResource extends Resource
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('status')
+                    ->label('Status')
                     ->options([
-                        'paid' => 'Lunas',
+                        'paid'    => 'Lunas',
                         'pending' => 'Belum Bayar',
+                        'failed'  => 'Gagal',
+                        'done'    => 'Selesai',
                     ]),
-            ])
+
+                Tables\Filters\Filter::make('periode')
+                    ->form([
+                        Forms\Components\DatePicker::make('dari_tanggal')
+                            ->label('Dari Tanggal')
+                            ->native(false)
+                            ->displayFormat('d/m/Y'),
+                        Forms\Components\DatePicker::make('sampai_tanggal')
+                            ->label('Sampai Tanggal')
+                            ->native(false)
+                            ->displayFormat('d/m/Y'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                filled($data['dari_tanggal'] ?? null),
+                                fn ($q) => $q->whereDate('created_at', '>=', $data['dari_tanggal'])
+                            )
+                            ->when(
+                                filled($data['sampai_tanggal'] ?? null),
+                                fn ($q) => $q->whereDate('created_at', '<=', $data['sampai_tanggal'])
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if (filled($data['dari_tanggal'] ?? null)) {
+                            $indicators[] = 'Dari: ' . \Carbon\Carbon::parse($data['dari_tanggal'])->format('d/m/Y');
+                        }
+                        if (filled($data['sampai_tanggal'] ?? null)) {
+                            $indicators[] = 'Sampai: ' . \Carbon\Carbon::parse($data['sampai_tanggal'])->format('d/m/Y');
+                        }
+                        return $indicators;
+                    }),
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
             ->actions([
-                // GANTI EditAction MENJADI ViewAction
-                // Tables\Actions\EditAction::make(), <--- HAPUS INI
-                Tables\Actions\ViewAction::make(), // <--- PAKAI INI (Tombol Mata)
+                Tables\Actions\ViewAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -113,14 +151,10 @@ class TransaksiResource extends Resource
     public static function getPages(): array
     {
         return [
-            // HAPUS route 'create' dan 'edit' agar tombol "New Transaksi" hilang otomatis
             'index' => Pages\ListTransaksis::route('/'),
-            // 'create' => Pages\CreateTransaksi::route('/create'), // <--- HAPUS
-            // 'edit' => Pages\EditTransaksi::route('/{record}/edit'), // <--- HAPUS
         ];
     }
-    
-    // TAMBAHAN: Memastikan tombol "New" benar-benar hilang secara logic
+
     public static function canCreate(): bool
     {
         return false;

@@ -7,11 +7,11 @@ use App\Models\DetailJurnal;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Enums\FiltersLayout;
 use Filament\Forms;
 use Filament\Tables\Columns\Summarizers\Sum;
 use Illuminate\Database\Eloquent\Builder;
 
-// Import untuk Excel
 use pxlrbt\FilamentExcel\Actions\Tables\ExportAction;
 use pxlrbt\FilamentExcel\Exports\ExcelExport;
 use pxlrbt\FilamentExcel\Columns\Column;
@@ -37,27 +37,23 @@ class LaporanBukuBesarResource extends Resource
                     ->collapsible(),
             ])
             ->columns([
-                // TANGGAL
                 Tables\Columns\TextColumn::make('jurnal.tanggal')
                     ->label('Tanggal')
                     ->date('d/m/Y')
                     ->sortable()
                     ->placeholder(''),
 
-                // KETERANGAN = Nama Akun
                 Tables\Columns\TextColumn::make('akun.nama_akun')
                     ->label('Keterangan')
                     ->weight(fn (DetailJurnal $record) => $record->debit > 0 ? 'bold' : 'normal')
                     ->searchable(),
 
-                // REF = Kode Akun
                 Tables\Columns\TextColumn::make('akun.kode_akun')
                     ->label('Ref')
                     ->fontFamily('mono')
                     ->sortable()
                     ->searchable(),
 
-                // DEBIT
                 Tables\Columns\TextColumn::make('debit')
                     ->label('Debit')
                     ->formatStateUsing(fn ($state) => $state > 0
@@ -65,7 +61,6 @@ class LaporanBukuBesarResource extends Resource
                         : '')
                     ->summarize(Sum::make()->label('Total')->numeric(decimalPlaces: 0)),
 
-                // KREDIT
                 Tables\Columns\TextColumn::make('kredit')
                     ->label('Kredit')
                     ->formatStateUsing(fn ($state) => $state > 0
@@ -74,7 +69,6 @@ class LaporanBukuBesarResource extends Resource
                     ->summarize(Sum::make()->label('Total')->numeric(decimalPlaces: 0)),
             ])
 
-            // SORTING
             ->defaultSort(fn ($query) => $query
                 ->select('detail_jurnals.*')
                 ->join('jurnals', 'detail_jurnals.jurnal_id', '=', 'jurnals.id')
@@ -124,7 +118,9 @@ class LaporanBukuBesarResource extends Resource
                     ->relationship('akun', 'nama_akun')
                     ->searchable()
                     ->preload(),
-            ])
+
+            ], layout: FiltersLayout::AboveContent)
+            ->filtersFormColumns(3)
 
             ->headerActions([
                 ExportAction::make()
